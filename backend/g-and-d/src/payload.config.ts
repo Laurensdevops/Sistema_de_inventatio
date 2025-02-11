@@ -12,6 +12,8 @@ import { Media } from './collections/Media'
 import  Products  from './collections/Products'
 import  Categories  from './collections/Categories'
 import  InventoryMovements  from './collections/InventoryMovements'
+import  Clients  from './collections/Clients'
+import  Invoices  from './collections/Invoices'
 
 import productEndpoints from "./endpoints/products";
 
@@ -32,7 +34,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media, Products, Categories, InventoryMovements], 
+  collections: [Users, Media, Products, Categories, InventoryMovements, Clients, Invoices], 
   endpoints: [...productEndpoints],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',

@@ -1,13 +1,32 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import FeatherIcon from "feather-icons-react";
 import ImageWithBasePath from "../../core/img/imagewithbasebath";
 import { Search, Settings, User, XCircle } from "react-feather";
 import { all_routes } from "../../Router/all_routes";
+import { useDispatch } from "react-redux";
+import { logoutUser } from "../../core/redux/action";
 
 const Header = () => {
   const route = all_routes;
   const [toggle, SetToggle] = useState(false);
+
+  const dispatch = useDispatch();
+
+  // Obtener usuario desde Redux
+  // const user = useSelector((state) => state.auth.user);
+
+  const handleLogout = () => {
+    // Eliminar datos del localStorage
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+
+    // Despachar acción de logout en Redux
+    dispatch(logoutUser());
+
+    // Redirigir al login
+    Navigate("/signin");
+  };
 
   const isElementVisible = (element) => {
     return element.offsetWidth > 0 || element.offsetHeight > 0;
@@ -481,7 +500,7 @@ const Header = () => {
                   Settings
                 </Link>
                 <hr className="m-0" />
-                <Link className="dropdown-item logout pb-0" to="/signin">
+                <Link className="dropdown-item logout pb-0" onClick={handleLogout}>
                   <ImageWithBasePath
                     src="assets/img/icons/log-out.svg"
                     alt="img"

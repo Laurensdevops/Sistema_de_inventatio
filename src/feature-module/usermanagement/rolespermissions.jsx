@@ -1,10 +1,9 @@
 import React, { useState } from "react";
 import { OverlayTrigger, Tooltip } from "react-bootstrap";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import ImageWithBasePath from "../../core/img/imagewithbasebath";
 import { Link } from "react-router-dom";
-import { ChevronUp, RotateCcw } from "feather-icons-react/build/IconComponents";
-import { setToogleHeader } from "../../core/redux/action";
+import { RotateCcw } from "feather-icons-react/build/IconComponents";
 import { Calendar, Filter, PlusCircle, Sliders, Zap } from "react-feather";
 import Select from "react-select";
 import { DatePicker } from "antd";
@@ -18,10 +17,8 @@ import { all_routes } from "../../Router/all_routes";
 
 const RolesPermissions = () => {
   const route = all_routes;
-  const data = useSelector((state) => state.toggle_header);
   const dataSource = useSelector((state) => state.rolesandpermission_data);
 
-  const dispatch = useDispatch();
   const [isFilterVisible, setIsFilterVisible] = useState(false);
   const toggleFilterVisibility = () => {
     setIsFilterVisible((prevVisibility) => !prevVisibility);
@@ -58,11 +55,6 @@ const RolesPermissions = () => {
   const renderRefreshTooltip = (props) => (
     <Tooltip id="refresh-tooltip" {...props}>
       Refresh
-    </Tooltip>
-  );
-  const renderCollapseTooltip = (props) => (
-    <Tooltip id="refresh-tooltip" {...props}>
-      Collapse
     </Tooltip>
   );
   const columns = [
@@ -181,21 +173,6 @@ const RolesPermissions = () => {
                 <OverlayTrigger placement="top" overlay={renderRefreshTooltip}>
                   <Link data-bs-toggle="tooltip" data-bs-placement="top">
                     <RotateCcw />
-                  </Link>
-                </OverlayTrigger>
-              </li>
-              <li>
-                <OverlayTrigger placement="top" overlay={renderCollapseTooltip}>
-                  <Link
-                    data-bs-toggle="tooltip"
-                    data-bs-placement="top"
-                    id="collapse-header"
-                    className={data ? "active" : ""}
-                    onClick={() => {
-                      dispatch(setToogleHeader(!data));
-                    }}
-                  >
-                    <ChevronUp />
                   </Link>
                 </OverlayTrigger>
               </li>

@@ -20,6 +20,11 @@ export const apiRequest = async (endpoint, method = "GET", body = null) => {
 
   try {
     const response = await fetch(`${API_URL}/${endpoint}`, config);
+
+    if (response.status === 204) {
+      return {};
+    }
+    
     const data = await response.json();
 
     if (!response.ok) {

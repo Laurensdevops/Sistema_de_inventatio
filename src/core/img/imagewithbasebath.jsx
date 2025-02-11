@@ -1,5 +1,4 @@
 import React from 'react';
-import { image_path } from '../../environment';
 
 interface Image {
   className?: string;
@@ -13,7 +12,7 @@ interface Image {
 const ImageWithBasePath = (props: Image) => {
   // Combine the base path and the provided src to create the full image source URL
   const altText = String(props.alt);
-  const fullSrc = `${image_path}${props.src}`;
+  const fullSrc = `${props.src}`;
   return (
     <img
       className={props.className}

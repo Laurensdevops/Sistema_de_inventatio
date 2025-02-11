@@ -1,10 +1,8 @@
-import { ChevronUp, RotateCcw } from "feather-icons-react/build/IconComponents";
+import {  RotateCcw } from "feather-icons-react/build/IconComponents";
 import React, { useState } from "react";
 import { OverlayTrigger, Tooltip } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import Select from "react-select";
-import { setToogleHeader } from "../../../core/redux/action";
-import { useDispatch, useSelector } from "react-redux";
 import SettingsSideBar from "../settingssidebar";
 import ImageWithBasePath from "../../../core/img/imagewithbasebath";
 
@@ -14,9 +12,6 @@ const Appearance = () => {
   const setActive = (theme) => {
     setIsActive(theme);
   };
-
-  const dispatch = useDispatch();
-  const data = useSelector((state) => state.toggle_header);
 
   const sizeOptions = [
     { value: "Hozizontal", label: "Hozizontal" },
@@ -54,21 +49,6 @@ const Appearance = () => {
                 <OverlayTrigger placement="top" overlay={renderRefreshTooltip}>
                   <Link data-bs-toggle="tooltip" data-bs-placement="top">
                     <RotateCcw />
-                  </Link>
-                </OverlayTrigger>
-              </li>
-              <li>
-                <OverlayTrigger placement="top" overlay={renderCollapseTooltip}>
-                  <Link
-                    data-bs-toggle="tooltip"
-                    data-bs-placement="top"
-                    id="collapse-header"
-                    className={data ? "active" : ""}
-                    onClick={() => {
-                      dispatch(setToogleHeader(!data));
-                    }}
-                  >
-                    <ChevronUp />
                   </Link>
                 </OverlayTrigger>
               </li>

@@ -4,14 +4,11 @@ import { Link } from "react-router-dom";
 import ImageWithBasePath from "../../core/img/imagewithbasebath";
 import {
   Calendar,
-  ChevronUp,
   PlusCircle,
   RotateCcw,
 } from "feather-icons-react/build/IconComponents";
-import { useDispatch, useSelector } from "react-redux";
 import { Box, Filter, Sliders, Zap } from "react-feather";
 import Select from "react-select";
-import { setToogleHeader } from "../../core/redux/action";
 import AddCoupons from "../../core/modals/coupons/addcoupons";
 import EditCoupons from "../../core/modals/coupons/editcoupons";
 import withReactContent from "sweetalert2-react-content";
@@ -19,9 +16,6 @@ import Swal from "sweetalert2";
 import { DatePicker } from "antd";
 
 const Coupons = () => {
-  const dispatch = useDispatch();
-  const data = useSelector((state) => state.toggle_header);
-
   const [isFilterVisible, setIsFilterVisible] = useState(false);
   const toggleFilterVisibility = () => {
     setIsFilterVisible((prevVisibility) => !prevVisibility);
@@ -62,11 +56,6 @@ const Coupons = () => {
   const renderRefreshTooltip = (props) => (
     <Tooltip id="refresh-tooltip" {...props}>
       Refresh
-    </Tooltip>
-  );
-  const renderCollapseTooltip = (props) => (
-    <Tooltip id="refresh-tooltip" {...props}>
-      Collapse
     </Tooltip>
   );
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -143,21 +132,6 @@ const Coupons = () => {
                 <OverlayTrigger placement="top" overlay={renderRefreshTooltip}>
                   <Link data-bs-toggle="tooltip" data-bs-placement="top">
                     <RotateCcw />
-                  </Link>
-                </OverlayTrigger>
-              </li>
-              <li>
-                <OverlayTrigger placement="top" overlay={renderCollapseTooltip}>
-                  <Link
-                    data-bs-toggle="tooltip"
-                    data-bs-placement="top"
-                    id="collapse-header"
-                    className={data ? "active" : ""}
-                    onClick={() => {
-                      dispatch(setToogleHeader(!data));
-                    }}
-                  >
-                    <ChevronUp />
                   </Link>
                 </OverlayTrigger>
               </li>

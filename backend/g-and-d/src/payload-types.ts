@@ -16,6 +16,8 @@ export interface Config {
     products: Product;
     categories: Category;
     'inventory-movements': InventoryMovement;
+    clients: Client;
+    invoices: Invoice;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -27,6 +29,8 @@ export interface Config {
     products: ProductsSelect<false> | ProductsSelect<true>;
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
     'inventory-movements': InventoryMovementsSelect<false> | InventoryMovementsSelect<true>;
+    clients: ClientsSelect<false> | ClientsSelect<true>;
+    invoices: InvoicesSelect<false> | InvoicesSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -148,6 +152,40 @@ export interface InventoryMovement {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "clients".
+ */
+export interface Client {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  address: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "invoices".
+ */
+export interface Invoice {
+  id: string;
+  invoiceNumber: string;
+  Client: string | Client;
+  invoiceDate: string;
+  issuedBy: string;
+  creationDate: string;
+  status: 'tomada' | 'en_empaquetado' | 'enviada' | 'completada';
+  items: {
+    productName: string;
+    quantity: number;
+    id?: string | null;
+  }[];
+  notes?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
@@ -172,6 +210,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'inventory-movements';
         value: string | InventoryMovement;
+      } | null)
+    | ({
+        relationTo: 'clients';
+        value: string | Client;
+      } | null)
+    | ({
+        relationTo: 'invoices';
+        value: string | Invoice;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -291,6 +337,40 @@ export interface InventoryMovementsSelect<T extends boolean = true> {
   type?: T;
   quantity?: T;
   date?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "clients_select".
+ */
+export interface ClientsSelect<T extends boolean = true> {
+  name?: T;
+  phone?: T;
+  email?: T;
+  address?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "invoices_select".
+ */
+export interface InvoicesSelect<T extends boolean = true> {
+  invoiceNumber?: T;
+  Client?: T;
+  invoiceDate?: T;
+  issuedBy?: T;
+  creationDate?: T;
+  status?: T;
+  items?:
+    | T
+    | {
+        productName?: T;
+        quantity?: T;
+        id?: T;
+      };
+  notes?: T;
   updatedAt?: T;
   createdAt?: T;
 }

@@ -1,18 +1,51 @@
-import React from 'react'
-import { Link } from 'react-router-dom'
-import ImageWithBasePath from '../../core/img/imagewithbasebath'
-import { PlusCircle, RotateCw } from 'feather-icons-react/build/IconComponents'
-import { Check } from 'react-feather'
-import Select from 'react-select'
+import React, { useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import ImageWithBasePath from '../../core/img/imagewithbasebath';
+import { PlusCircle, RotateCw } from 'feather-icons-react/build/IconComponents';
+import { Check } from 'react-feather';
+import Select from 'react-select';
 import { all_routes } from "../../Router/all_routes";
-import { OverlayTrigger, Tooltip } from 'react-bootstrap'
-import withReactContent from 'sweetalert2-react-content'
-import Swal from 'sweetalert2'
-import Slider from 'react-slick'
+import { OverlayTrigger, Tooltip } from 'react-bootstrap';
+import withReactContent from 'sweetalert2-react-content';
+import Swal from 'sweetalert2';
+import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
+// import { useSelector } from "react-redux";
+
+import useProducts from '../../hooks/useProducts';
+import useCategories from '../../hooks/useCategories';
 
 const ProductList = () => {
+  // const user = useSelector((state) => state.user);
+  // const token = useSelector((state) => state.token);
+
+  // useEffect(() => {
+  //   console.log("Usuario autenticado:", user);
+  //   console.log("Token:", token);
+  // }, [user, token]);
+
+  const {
+    products,
+    // recentProduct, 
+    // bestSellers, 
+    loading: productsLoading,
+  } = useProducts();
+
+  const {
+    categories,
+    loading: categoriesLoading,
+  } = useCategories();
+
+  useEffect(() => {
+    if (!productsLoading && !categoriesLoading) {
+      console.log("Productos:", products);
+      // console.log("Producto Reciente:", recentProduct);
+      // console.log("Más Vendidos:", bestSellers);
+    }
+    // }, [productsLoading, categoriesLoading, products, recentProduct, bestSellers, categories]);
+  }, [productsLoading, categoriesLoading, products, categories]);
+
   const route = all_routes;
   const tax = [
     { value: 'exclusive', label: 'Exclusive' },
@@ -44,7 +77,7 @@ const ProductList = () => {
     dots: false,
     autoplay: false,
     slidesToShow: 5,
-    margin:0,
+    margin: 0,
     speed: 500,
     responsive: [
       {
@@ -129,61 +162,22 @@ const ProductList = () => {
                 <h5>Categoria</h5>
                 <p>Seleccione una de las siguientes categorías</p>
                 <Slider {...settings} className='tabs owl-carousel pos-category'>
-                  <div id="all" className='pos-slick-item'>
-                    <Link to="#">
-                      <ImageWithBasePath src="assets/img/categories/category-01.png" alt="Categories" />
-                    </Link>
-                    <h6>
-                      <Link to="#">Todas las categorias</Link>
-                    </h6>
-                    <span>80 Articulos</span>
-                  </div>
-                  <div id="headphones" className='pos-slick-item'>
-                    <Link to="#">
-                      <ImageWithBasePath src="assets/img/categories/category-02.png" alt="Categories" />
-                    </Link>
-                    <h6>
-                      <Link to="#">Auriculares</Link>
-                    </h6>
-                    <span>4 Articulos</span>
-                  </div>
-                  <div id="shoes" className='pos-slick-item'>
-                    <Link to="#">
-                      <ImageWithBasePath src="assets/img/categories/category-03.png" alt="Categories" />
-                    </Link>
-                    <h6>
-                      <Link to="#">Zapatos</Link>
-                    </h6>
-                    <span>14 Articulos</span>
-                  </div>
-                  <div id="mobiles" className='pos-slick-item'>
-                    <Link to="#">
-                      <ImageWithBasePath src="assets/img/categories/category-04.png" alt="Categories" />
-                    </Link>
-                    <h6>
-                      <Link to="#">Móviles</Link>
-                    </h6>
-                    <span>7 Articulos</span>
-                  </div>
-                  <div id="watches" className='pos-slick-item'>
-                    <Link to="#">
-                      <ImageWithBasePath src="assets/img/categories/category-05.png" alt="Categories" />
-                    </Link>
-                    <h6>
-                      <Link to="#">Relojes</Link>
-                    </h6>
-                    <span>16 Articulos</span>
-                  </div>
-                  <div id="laptops" className='pos-slick-item'>
-                    <Link to="#">
-                      <ImageWithBasePath src="assets/img/categories/category-06.png" alt="Categories" />
-                    </Link>
-                    <h6>
-                      <Link to="#">Laptops</Link>
-                    </h6>
-                    <span>18 Articulos</span>
-                  </div>
-                  </Slider>
+                  {categories.map((cat) => {
+                    return (
+                      <div key={cat.id} id={cat.id} className='pos-slick-item'>
+                        <Link to="#">
+                          <ImageWithBasePath height={64} width={64} src={cat.image.url} alt={cat.image.alt} />
+                        </Link>
+                        <h6>
+                          <Link to="#">{cat.name}</Link>
+                        </h6>
+                        <span>{cat.productCount}</span>
+                      </div>
+                    );
+                  })}
+
+                </Slider>
+                {/* Listado de productos */}
                 <div className="pos-products">
                   <div className="d-flex align-items-center justify-content-between">
                     <h5 className="mb-3">Productos</h5>
@@ -191,107 +185,48 @@ const ProductList = () => {
                   <div className="tabs_container">
                     <div className="tab_content active" data-tab="all">
                       <div className="row">
-                        <div className="col-sm-2 col-md-6 col-lg-3 col-xl-3">
-                          <div className="product-info default-cover card">
-                            <Link to="#" className="img-bg">
-                              <ImageWithBasePath
-                                src="assets/img/products/pos-product-01.png"
-                                alt="Products"
-                              />
-                              <span>
-                         
-                                <Check className="feather-16"/>
-                              </span>
-                            </Link>
-                            <h6 className="cat-name">
-                              <Link to="#">Mobiles</Link>
-                            </h6>
-                            <h6 className="product-name">
-                              <Link to="#">IPhone 14 64GB</Link>
-                            </h6>
-                            <div className="d-flex align-items-center justify-content-between price">
-                              <p>$15800</p>
+                        {products?.docs?.map((product) => {
+                          return (
+                            <div key={product.id} className="col-12 col-sm-6 col-md-4 col-lg-3">
+                              <div className="product-info default-cover card">
+                                <Link to="#" className="img-bg">
+                                  <ImageWithBasePath
+                                    src={product?.image?.url}
+                                    alt={product?.image?.alt}
+                                    height={100}
+                                    width={100}
+                                  />
+                                  <span>
+                                    <Check className="feather-16" />
+                                  </span>
+                                </Link>
+                                <h6 className="cat-name">
+                                  <Link to="#">
+                                    {product.categories.map((cat) => {
+                                      return (
+                                        <span key={cat.id}>{cat.name} </span>
+                                      );
+                                    })}
+                                  </Link>
+                                </h6>
+                                <h6 className="product-name">
+                                  <Link to="#">{product.name}</Link>
+                                </h6>
+                                <div className="d-flex align-items-center justify-content-between price">
+                                  <p><strong>Base:</strong> {product.prices.base}</p>
+                                  <p><strong>Retail:</strong> {product.prices.retail}</p>
+                                  <p><strong>Mayorista:</strong> {product.prices.wholesale}</p>
+                                </div>
+                                <div className="stock-info" style={{ marginTop: '5px' }}>
+                                  <p><strong>Stock:</strong> {product.stock}</p>
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        </div>
+                          );
+                        })}
+                        {console.log("productos:", products)}
                       </div>
                     </div>
-
-
-                  </div>
-                </div>
-
-                <div className="pos-products">
-                  <div className="d-flex align-items-center justify-content-between">
-                    <h5 className="mb-3">Productos recientes</h5>
-                  </div>
-                  <div className="tabs_container">
-                    <div className="tab_content active" data-tab="all">
-                      <div className="row">
-                        <div className="col-sm-2 col-md-6 col-lg-3 col-xl-3">
-                          <div className="product-info default-cover card">
-                            <Link to="#" className="img-bg">
-                              <ImageWithBasePath
-                                src="assets/img/products/pos-product-01.png"
-                                alt="Products"
-                              />
-                              <span>
-                         
-                                <Check className="feather-16"/>
-                              </span>
-                            </Link>
-                            <h6 className="cat-name">
-                              <Link to="#">Mobiles</Link>
-                            </h6>
-                            <h6 className="product-name">
-                              <Link to="#">IPhone 14 64GB</Link>
-                            </h6>
-                            <div className="d-flex align-items-center justify-content-between price">
-                              <p>$15800</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    
-                  </div>
-                </div>
-
-                <div className="pos-products">
-                  <div className="d-flex align-items-center justify-content-between">
-                    <h5 className="mb-3">Mas vendido</h5>
-                  </div>
-                  <div className="tabs_container">
-                    <div className="tab_content active" data-tab="all">
-                      <div className="row">
-                        <div className="col-sm-2 col-md-6 col-lg-3 col-xl-3">
-                          <div className="product-info default-cover card">
-                            <Link to="#" className="img-bg">
-                              <ImageWithBasePath
-                                src="assets/img/products/pos-product-01.png"
-                                alt="Products"
-                              />
-                              <span>
-                         
-                                <Check className="feather-16"/>
-                              </span>
-                            </Link>
-                            <h6 className="cat-name">
-                              <Link to="#">Mobiles</Link>
-                            </h6>
-                            <h6 className="product-name">
-                              <Link to="#">IPhone 14 64GB</Link>
-                            </h6>
-                            <div className="d-flex align-items-center justify-content-between price">
-                              <p>$15800</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    
                   </div>
                 </div>
               </div>

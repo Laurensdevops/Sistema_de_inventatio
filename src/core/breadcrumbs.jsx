@@ -5,17 +5,11 @@ import ImageWithBasePath from "./img/imagewithbasebath";
 import { PlusCircle, Printer } from "react-feather";
 import { Download, RotateCcw } from "feather-icons-react/build/IconComponents";
 import { OverlayTrigger, Tooltip } from "react-bootstrap";
-// import { setToogleHeader } from "../../core/redux/action";
-import { useDispatch, useSelector } from "react-redux";
-import { ChevronUp } from "react-feather";
-import { setToogleHeader } from "./redux/action";
 
 const Breadcrumbs = (props) => {
   const location = useLocation();
-  const data = useSelector((state) => state.toggle_header);
 
   let addButton = null;
-  const dispatch = useDispatch();
 
   const renderTooltip = (props) => (
     <Tooltip id="pdf-tooltip" {...props}>
@@ -35,11 +29,6 @@ const Breadcrumbs = (props) => {
   const renderRefreshTooltip = (props) => (
     <Tooltip id="refresh-tooltip" {...props}>
       Refresh
-    </Tooltip>
-  );
-  const renderCollapseTooltip = (props) => (
-    <Tooltip id="refresh-tooltip" {...props}>
-      Collapse
     </Tooltip>
   );
   if (
@@ -149,21 +138,6 @@ const Breadcrumbs = (props) => {
               </Link>
             </OverlayTrigger>
           </li>
-          <li>
-            <OverlayTrigger placement="top" overlay={renderCollapseTooltip}>
-              <Link
-                data-bs-toggle="tooltip"
-                data-bs-placement="top"
-                id="collapse-header"
-                className={data ? "active" : ""}
-                onClick={() => {
-                  dispatch(setToogleHeader(!data));
-                }}
-              >
-                <ChevronUp />
-              </Link>
-            </OverlayTrigger>
-          </li>
         </ul>
       </div>
     );
@@ -211,21 +185,6 @@ const Breadcrumbs = (props) => {
             <OverlayTrigger placement="top" overlay={renderRefreshTooltip}>
               <Link data-bs-toggle="tooltip" data-bs-placement="top">
                 <RotateCcw />
-              </Link>
-            </OverlayTrigger>
-          </li>
-          <li>
-            <OverlayTrigger placement="top" overlay={renderCollapseTooltip}>
-              <Link
-                data-bs-toggle="tooltip"
-                data-bs-placement="top"
-                id="collapse-header"
-                className={data ? "active" : ""}
-                onClick={() => {
-                  dispatch(setToogleHeader(!data));
-                }}
-              >
-                <ChevronUp />
               </Link>
             </OverlayTrigger>
           </li>

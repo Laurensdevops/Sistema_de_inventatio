@@ -10,11 +10,21 @@ export const getProducts = async () => {
 };
 
 export const getRecentProduct = async () => {
-  return await apiRequest("products/recent");
+  try {
+    return await apiRequest("products/recent");
+  } catch (error) {
+    console.error("Error al obtener productos recientes:", error);
+    throw error;
+  }
 };
 
 export const getBestSellers = async () => {
-  return await apiRequest("products/best-sellers");
+  try {
+    return await apiRequest("products/best-sellers");
+  } catch (error) {
+    console.error("Error al obtener productos mas vendidos:", error);
+    throw error;
+  }
 };
 
 export const createProduct = async (productData) => {

@@ -1,87 +1,104 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import Select from "react-select";
 import { all_routes } from "../../Router/all_routes";
-// import { DatePicker } from "antd";
 import AddCategory from "../../core/modals/inventory/addcategory";
 import {
   ArrowLeft,
-  // Calendar,
   ChevronDown,
-  ChevronUp,
   Info,
-  // LifeBuoy,
-  // List,
   PlusCircle,
-  // Trash2,
-  // X,
 } from "feather-icons-react/build/IconComponents";
-import { useDispatch, useSelector } from "react-redux";
-import { setToogleHeader } from "../../core/redux/action";
-import { OverlayTrigger, Tooltip } from "react-bootstrap";
-// import ImageWithBasePath from "../../core/img/imagewithbasebath";
+import useCategories from "../../hooks/useCategories";
+import { createProduct } from "../../services/productService";
 
 const AddProduct = () => {
+  const navigate = useNavigate();
   const route = all_routes;
-  const dispatch = useDispatch();
 
-  const data = useSelector((state) => state.toggle_header);
+  const { categories, loading: categoriesLoading } = useCategories();
 
-  // const [selectedDate, setSelectedDate] = useState(new Date());
-  // const handleDateChange = (date) => {
-  //   setSelectedDate(date);
-  // };
-  // const [selectedDate1, setSelectedDate1] = useState(new Date());
-  // const handleDateChange1 = (date) => {
-  //   setSelectedDate1(date);
-  // };
-  const renderCollapseTooltip = (props) => (
-    <Tooltip id="refresh-tooltip" {...props}>
-      Collapse
-    </Tooltip>
-  );
-  const category = [
-    { value: "choose", label: "Elegir" },
-    { value: "lenovo", label: "Lenovo" },
-    { value: "electronics", label: "Electronics" },
-  ];
-  const subcategory = [
-    { value: "choose", label: "Elegir" },
-    { value: "lenovo", label: "Lenovo" },
-    { value: "electronics", label: "Electronica" },
-  ];
+  // Opciones para el select de categorías
+  const [categoryOptions, setCategoryOptions] = useState([]);
+  // Estado para almacenar las categorías seleccionadas (recuerda que es hasMany)
+  const [selectedCategories, setSelectedCategories] = useState([]);
 
-  // const taxtype = [
-  //   { value: "exclusive", label: "Exclusive" },
-  //   { value: "salesTax", label: "Sales Tax" },
-  // ];
-  // const discounttype = [
-  //   { value: "choose", label: "Choose" },
-  //   { value: "percentage", label: "Percentage" },
-  //   { value: "cash", label: "Cash" },
-  // ];
-  // const discounttype1 = [
-  //   { value: "choose", label: "Choose" },
-  //   { value: "percentage", label: "Percentage" },
-  //   { value: "cash", label: "Cash" },
-  // ];
-  // const [isImageVisible, setIsImageVisible] = useState(true);
+  // Estados para los campos del formulario
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [stock, setStock] = useState("");
+  const [isFeatured, setIsFeatured] = useState(false);
+  const [basePrice, setBasePrice] = useState("");
+  const [retailPrice, setRetailPrice] = useState("");
+  const [wholesalePrice, setWholesalePrice] = useState("");
+  const [image, setImage] = useState(null); 
 
-  // const handleRemoveProduct = () => {
-  //   setIsImageVisible(false);
-  // };
-  // const [isImageVisible1, setIsImageVisible1] = useState(true);
+  // Cuando ya se tengan las categorías, se construyen las opciones para el select
+  useEffect(() => {
+    if (!categoriesLoading && categories.length > 0) {
+      const options = categories.map((cat) => ({
+        value: cat.id || cat._id, // Asegúrate de que la categoría tenga id o _id
+        label: cat.name,
+      }));
+      setCategoryOptions(options);
+    }
+  }, [categoriesLoading, categories]);
 
-  // const handleRemoveProduct1 = () => {
-  //   setIsImageVisible1(false);
-  // };
+  // Función para manejar el cambio del file (imagen)
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setImage(e.target.files[0]);
+    }
+  };
+
+  // Función para manejar el envío del formulario
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (
+      !name ||
+      !stock ||
+      !basePrice ||
+      !retailPrice ||
+      !wholesalePrice ||
+      selectedCategories.length === 0
+    ) {
+      alert("Por favor, complete todos los campos obligatorios.");
+      return;
+    }
+
+    const productData = {
+      name,
+      description,
+      categories: selectedCategories.map((option) => option.value),
+      prices: {
+        base: Number(basePrice),
+        wholesale: Number(wholesalePrice),
+        retail: Number(retailPrice),
+      },
+      stock: Number(stock),
+      isFeatured,
+    };
+
+    console.log("productData=>", productData, image)
+
+    try {
+      await createProduct(productData);
+      alert("Producto creado exitosamente");
+      navigate(route.productlist);
+    } catch (error) {
+      alert("Error al crear el producto");
+      console.error("Error:", error);
+    }
+  };
+
   return (
     <div className="page-wrapper">
       <div className="content">
         <div className="page-header">
           <div className="add-item d-flex">
             <div className="page-title">
-              <h4>Muevo producto</h4>
+              <h4>Nuevo producto</h4>
               <h6>Crear un nuevo producto</h6>
             </div>
           </div>
@@ -94,26 +111,10 @@ const AddProduct = () => {
                 </Link>
               </div>
             </li>
-            <li>
-              <OverlayTrigger placement="top" overlay={renderCollapseTooltip}>
-                <Link
-                  data-bs-toggle="tooltip"
-                  data-bs-placement="top"
-                  title="Collapse"
-                  id="collapse-header"
-                  className={data ? "active" : ""}
-                  onClick={() => {
-                    dispatch(setToogleHeader(!data));
-                  }}
-                >
-                  <ChevronUp className="feather-chevron-up" />
-                </Link>
-              </OverlayTrigger>
-            </li>
           </ul>
         </div>
-        {/* /add */}
-        <form>
+        {/* Formulario para agregar producto */}
+        <form onSubmit={handleSubmit}>
           <div className="card">
             <div className="card-body add-product pb-0">
               <div
@@ -131,8 +132,7 @@ const AddProduct = () => {
                       <div className="addproduct-icon">
                         <h5>
                           <Info className="add-info" />
-
-                          <span>Informacion del producto</span>
+                          <span>Información del producto</span>
                         </h5>
                         <Link to="#">
                           <ChevronDown className="chevron-down-add" />
@@ -148,41 +148,58 @@ const AddProduct = () => {
                   >
                     <div className="accordion-body">
                       <div className="row">
+                        {/* Nombre del producto */}
                         <div className="col-lg-4 col-sm-6 col-12">
                           <div className="mb-3 add-product">
                             <label className="form-label">Nombre producto</label>
-                            <input type="text" className="form-control" />
-                          </div>
-                        </div>
-                        <div className="col-lg-4 col-sm-6 col-12">
-                          <div className="mb-3 add-product">
-                            <label className="form-label">Slug</label>
-                            <input type="text" className="form-control" />
-                          </div>
-                        </div>
-                        <div className="col-lg-4 col-sm-6 col-12">
-                          <div className="input-blocks add-product list">
-                            <label>SKU</label>
                             <input
                               type="text"
-                              className="form-control list"
-                              placeholder="ingrese SKU"
+                              className="form-control"
+                              value={name}
+                              onChange={(e) => setName(e.target.value)}
+                              required
                             />
-                            <Link
-                              to={route.addproduct}
-                              className="btn btn-primaryadd"
-                            >
-                              Generar
-                            </Link>
+                          </div>
+                        </div>
+                        {/* Stock */}
+                        <div className="col-lg-4 col-sm-6 col-12">
+                          <div className="mb-3 add-product">
+                            <label className="form-label">Stock</label>
+                            <input
+                              type="number"
+                              className="form-control"
+                              value={stock}
+                              onChange={(e) => setStock(e.target.value)}
+                              required
+                            />
+                          </div>
+                        </div>
+                        {/* Destacado */}
+                        <div className="col-lg-4 col-sm-6 col-12">
+                          <div className="status-toggle modal-status d-flex justify-content-between align-items-center ms-2">
+                            <div className="security-type">
+                              <div className="security-title">
+                                <h5>Destacado?</h5>
+                              </div>
+                            </div>
+                            <input
+                              type="checkbox"
+                              id="featured"
+                              className="check"
+                              checked={isFeatured}
+                              onChange={(e) => setIsFeatured(e.target.checked)}
+                            />
+                            <label htmlFor="featured" className="checktoggle"></label>
                           </div>
                         </div>
                       </div>
                       <div className="addservice-info">
                         <div className="row">
+                          {/* Selección de categoría */}
                           <div className="col-lg-4 col-sm-6 col-12">
                             <div className="mb-3 add-product">
                               <div className="add-newplus">
-                                <label className="form-label">Categoria</label>
+                                <label className="form-label">Categoría</label>
                                 <Link
                                   to="#"
                                   data-bs-toggle="modal"
@@ -194,622 +211,80 @@ const AddProduct = () => {
                               </div>
                               <Select
                                 classNamePrefix="react-select"
-                                options={category}
-                                placeholder="Choose"
+                                options={categoryOptions}
+                                placeholder="Elegir"
+                                isMulti
+                                value={selectedCategories}
+                                onChange={setSelectedCategories}
                               />
                             </div>
                           </div>
+                          {/* Upload de imagen (opcional) */}
+                          <div className="input-blocks col-lg-4 col-sm-6 col-12">
+                            <div className="image-upload">
+                              <input type="file" onChange={handleFileChange} />
+                              <div className="image-uploads">
+                                <PlusCircle className="plus-down-add me-0" />
+                                <h4>Add Images</h4>
+                              </div>
+                            </div>
+                          </div>
+                          {/* Descripción */}
+                          <div className="col-lg-12">
+                            <div className="input-blocks summer-description-box transfer mb-3">
+                              <label>Descripción</label>
+                              <textarea
+                                className="form-control h-100"
+                                rows={5}
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                              />
+                              <p className="mt-1">Máximo 60 caracteres</p>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="row">
+                          {/* Precio base */}
                           <div className="col-lg-4 col-sm-6 col-12">
                             <div className="mb-3 add-product">
-                              <label className="form-label">Sub Categoria</label>
-                              <Select
-                                classNamePrefix="react-select"
-                                options={subcategory}
-                                placeholder="Choose"
+                              <label className="form-label">Precio base</label>
+                              <input
+                                type="number"
+                                className="form-control"
+                                value={basePrice}
+                                onChange={(e) => setBasePrice(e.target.value)}
+                                required
                               />
                             </div>
                           </div>
-                          {/* <div className="col-lg-4 col-sm-6 col-12">
+                          {/* Precio por detalle */}
+                          <div className="col-lg-4 col-sm-6 col-12">
                             <div className="mb-3 add-product">
                               <label className="form-label">
-                                Sub Sub Category
+                                Precio por detalle
                               </label>
-                              <Select
-                                classNamePrefix="react-select"
-                                options={subsubcategories}
-                                placeholder="Choose"
+                              <input
+                                type="number"
+                                className="form-control"
+                                value={retailPrice}
+                                onChange={(e) => setRetailPrice(e.target.value)}
+                                required
                               />
                             </div>
-                          </div> */}
-                        </div>
-                      </div>
-                      {/* <div className="add-product-new">
-                        <div className="row">
+                          </div>
+                          {/* Precio por mayor */}
                           <div className="col-lg-4 col-sm-6 col-12">
                             <div className="mb-3 add-product">
-                              <div className="add-newplus">
-                                <label className="form-label">Brand</label>
-                                <Link
-                                  to="#"
-                                  data-bs-toggle="modal"
-                                  data-bs-target="#add-units-brand"
-                                >
-                                  <PlusCircle className="plus-down-add" />
-                                  <span>Agregar</span>
-                                </Link>
-                              </div>
-                              <Select
-                                classNamePrefix="react-select"
-                                options={brand}
-                                placeholder="Choose"
+                              <label className="form-label">
+                                Precio por mayor
+                              </label>
+                              <input
+                                type="number"
+                                className="form-control"
+                                value={wholesalePrice}
+                                onChange={(e) => setWholesalePrice(e.target.value)}
+                                required
                               />
-                            </div>
-                          </div>
-                          <div className="col-lg-4 col-sm-6 col-12">
-                            <div className="mb-3 add-product">
-                              <div className="add-newplus">
-                                <label className="form-label">Unit</label>
-                                <Link
-                                  to="#"
-                                  data-bs-toggle="modal"
-                                  data-bs-target="#add-unit"
-                                >
-                                  <PlusCircle className="plus-down-add" />
-                                  <span>Agregar</span>
-                                </Link>
-                              </div>
-                              <Select
-                                classNamePrefix="react-select"
-                                options={unit}
-                                placeholder="Choose"
-                              />
-                            </div>
-                          </div>
-                          <div className="col-lg-4 col-sm-6 col-12">
-                            <div className="mb-3 add-product">
-                              <label className="form-label">Selling Type</label>
-                              <Select
-                                classNamePrefix="react-select"
-                                options={sellingtype}
-                                placeholder="Choose"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="row">
-                        <div className="col-lg-6 col-sm-6 col-12">
-                          <div className="mb-3 add-product">
-                            <label className="form-label">
-                              Barcode Symbology
-                            </label>
-                            <Select
-                              classNamePrefix="react-select"
-                              options={barcodesymbol}
-                              placeholder="Choose"
-                            />
-                          </div>
-                        </div>
-                        <div className="col-lg-6 col-sm-6 col-12">
-                          <div className="input-blocks add-product list">
-                            <label>Item Code</label>
-                            <input
-                              type="text"
-                              className="form-control list"
-                              placeholder="Please Enter Item Code"
-                            />
-                            <Link
-                              to={route.addproduct}
-                              className="btn btn-primaryadd"
-                            >
-                              Generate Code
-                            </Link>
-                          </div>
-                        </div>
-                      </div> */}
-                      {/* Editor */}
-                      {/* <div className="col-lg-12">
-                        <div className="input-blocks summer-description-box transfer mb-3">
-                          <label>Description</label>
-                          <textarea
-                            className="form-control h-100"
-                            rows={5}
-                            defaultValue={""}
-                          />
-                          <p className="mt-1">Maximum 60 Characters</p>
-                        </div>
-                      </div> */}
-                      {/* /Editor */}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              {/* <div
-                className="accordion-card-one accordion"
-                id="accordionExample2"
-              >
-                <div className="accordion-item">
-                  <div className="accordion-header" id="headingTwo">
-                    <div
-                      className="accordion-button"
-                      data-bs-toggle="collapse"
-                      data-bs-target="#collapseTwo"
-                      aria-controls="collapseTwo"
-                    >
-                      <div className="text-editor add-list">
-                        <div className="addproduct-icon list icon">
-                          <h5>
-                            <LifeBuoy className="add-info" />
-                            <span>Pricing &amp; Stocks</span>
-                          </h5>
-                          <Link to="#">
-                            <ChevronDown className="chevron-down-add" />
-                          </Link>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div
-                    id="collapseTwo"
-                    className="accordion-collapse collapse show"
-                    aria-labelledby="headingTwo"
-                    data-bs-parent="#accordionExample2"
-                  >
-                    <div className="accordion-body">
-                      <div className="input-blocks add-products">
-                        <label className="d-block">Product Type</label>
-                        <div className="single-pill-product">
-                          <ul
-                            className="nav nav-pills"
-                            id="pills-tab1"
-                            role="tablist"
-                          >
-                            <li className="nav-item" role="presentation">
-                              <span
-                                className="custom_radio me-4 mb-0 active"
-                                id="pills-home-tab"
-                                data-bs-toggle="pill"
-                                data-bs-target="#pills-home"
-                                role="tab"
-                                aria-controls="pills-home"
-                                aria-selected="true"
-                              >
-                                <input
-                                  type="radio"
-                                  className="form-control"
-                                  name="payment"
-                                />
-                                <span className="checkmark" /> Single Product
-                              </span>
-                            </li>
-                            <li className="nav-item" role="presentation">
-                              <span
-                                className="custom_radio me-2 mb-0"
-                                id="pills-profile-tab"
-                                data-bs-toggle="pill"
-                                data-bs-target="#pills-profile"
-                                role="tab"
-                                aria-controls="pills-profile"
-                                aria-selected="false"
-                              >
-                                <input
-                                  type="radio"
-                                  className="form-control"
-                                  name="sign"
-                                />
-                                <span className="checkmark" /> Variable Product
-                              </span>
-                            </li>
-                          </ul>
-                        </div>
-                      </div>
-                      <div className="tab-content" id="pills-tabContent">
-                        <div
-                          className="tab-pane fade show active"
-                          id="pills-home"
-                          role="tabpanel"
-                          aria-labelledby="pills-home-tab"
-                        >
-                          <div className="row">
-                            <div className="col-lg-4 col-sm-6 col-12">
-                              <div className="input-blocks add-product">
-                                <label>Quantity</label>
-                                <input type="text" className="form-control" />
-                              </div>
-                            </div>
-                            <div className="col-lg-4 col-sm-6 col-12">
-                              <div className="input-blocks add-product">
-                                <label>Price</label>
-                                <input type="text" className="form-control" />
-                              </div>
-                            </div>
-                            <div className="col-lg-4 col-sm-6 col-12">
-                              <div className="input-blocks add-product">
-                                <label>Tax Type</label>
-                                <Select
-                                  classNamePrefix="react-select"
-                                  options={taxtype}
-                                  placeholder="Select Option"
-                                />
-                              </div>
-                            </div>
-                          </div>
-                          <div className="row">
-                            <div className="col-lg-4 col-sm-6 col-12">
-                              <div className="input-blocks add-product">
-                                <label>Discount Type</label>
-                                <Select
-                                  classNamePrefix="react-select"
-                                  options={discounttype}
-                                  placeholder="Choose"
-                                />
-                              </div>
-                            </div>
-                            <div className="col-lg-4 col-sm-6 col-12">
-                              <div className="input-blocks add-product">
-                                <label>Discount Value</label>
-                                <input type="text" placeholder="Choose" />
-                              </div>
-                            </div>
-                            <div className="col-lg-4 col-sm-6 col-12">
-                              <div className="input-blocks add-product">
-                                <label>Quantity Alert</label>
-                                <input type="text" className="form-control" />
-                              </div>
-                            </div>
-                          </div>
-                          <div
-                            className="accordion-card-one accordion"
-                            id="accordionExample3"
-                          >
-                            <div className="accordion-item">
-                              <div
-                                className="accordion-header"
-                                id="headingThree"
-                              >
-                                <div
-                                  className="accordion-button"
-                                  data-bs-toggle="collapse"
-                                  data-bs-target="#collapseThree"
-                                  aria-controls="collapseThree"
-                                >
-                                  <div className="addproduct-icon list">
-                                    <h5>
-                                      <i
-                                        data-feather="image"
-                                        className="add-info"
-                                      />
-                                      <span>Images</span>
-                                    </h5>
-                                    <Link to="#">
-                                      <ChevronDown className="chevron-down-add" />
-                                    </Link>
-                                  </div>
-                                </div>
-                              </div>
-                              <div
-                                id="collapseThree"
-                                className="accordion-collapse collapse show"
-                                aria-labelledby="headingThree"
-                                data-bs-parent="#accordionExample3"
-                              >
-                                <div className="accordion-body">
-                                  <div className="text-editor add-list add">
-                                    <div className="col-lg-12">
-                                      <div className="add-choosen">
-                                        <div className="input-blocks">
-                                          <div className="image-upload">
-                                            <input type="file" />
-                                            <div className="image-uploads">
-                                              <PlusCircle className="plus-down-add me-0" />
-                                              <h4>Add Images</h4>
-                                            </div>
-                                          </div>
-                                        </div>
-                                        {isImageVisible1 && (
-                                          <div className="phone-img">
-                                            <ImageWithBasePath
-                                              src="assets/img/products/phone-add-2.png"
-                                              alt="image"
-                                            />
-                                            <Link to="#">
-                                              <X
-                                                className="x-square-add remove-product"
-                                                onClick={handleRemoveProduct1}
-                                              />
-                                            </Link>
-                                          </div>
-                                        )}
-                                        {isImageVisible && (
-                                          <div className="phone-img">
-                                            <ImageWithBasePath
-                                              src="assets/img/products/phone-add-1.png"
-                                              alt="image"
-                                            />
-                                            <Link to="#">
-                                              <X
-                                                className="x-square-add remove-product"
-                                                onClick={handleRemoveProduct}
-                                              />
-                                            </Link>
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        <div
-                          className="tab-pane fade"
-                          id="pills-profile"
-                          role="tabpanel"
-                          aria-labelledby="pills-profile-tab"
-                        >
-                          <div className="row select-color-add">
-                            <div className="col-lg-6 col-sm-6 col-12">
-                              <div className="input-blocks add-product">
-                                <label>Variant Attribute</label>
-                                <div className="row">
-                                  <div className="col-lg-10 col-sm-10 col-10">
-                                    <select
-                                      className="form-control variant-select select-option"
-                                      id="colorSelect"
-                                    >
-                                      <option>Choose</option>
-                                      <option>Color</option>
-                                      <option value="red">Red</option>
-                                      <option value="black">Black</option>
-                                    </select>
-                                  </div>
-                                  <div className="col-lg-2 col-sm-2 col-2 ps-0">
-                                    <div className="add-icon tab">
-                                      <Link
-                                        className="btn btn-filter"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#add-units"
-                                      >
-                                        <PlusCircle className="feather feather-plus-circle" />
-                                      </Link>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                              <div
-                                className="selected-hide-color"
-                                id="input-show"
-                              >
-                                <div className="row align-items-center">
-                                  <div className="col-sm-10">
-                                    <div className="input-blocks">
-                                      <input
-                                        className="input-tags form-control"
-                                        id="inputBox"
-                                        type="text"
-                                        data-role="tagsinput"
-                                        name="specialist"
-                                        defaultValue="red, black"
-                                      />
-                                    </div>
-                                  </div>
-                                  <div className="col-lg-2">
-                                    <div className="input-blocks ">
-                                      <Link to="#" className="remove-color">
-                                        <Trash2 />
-                                      </Link>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          <div
-                            className="modal-body-table variant-table"
-                            id="variant-table"
-                          >
-                            <div className="table-responsive">
-                              <table className="table">
-                                <thead>
-                                  <tr>
-                                    <th>Variantion</th>
-                                    <th>Variant Value</th>
-                                    <th>SKU</th>
-                                    <th>Quantity</th>
-                                    <th>Price</th>
-                                    <th className="no-sort">Action</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  <tr>
-                                    <td>
-                                      <div className="add-product">
-                                        <input
-                                          type="text"
-                                          className="form-control"
-                                          defaultValue="color"
-                                        />
-                                      </div>
-                                    </td>
-                                    <td>
-                                      <div className="add-product">
-                                        <input
-                                          type="text"
-                                          className="form-control"
-                                          defaultValue="red"
-                                        />
-                                      </div>
-                                    </td>
-                                    <td>
-                                      <div className="add-product">
-                                        <input
-                                          type="text"
-                                          className="form-control"
-                                          defaultValue={1234}
-                                        />
-                                      </div>
-                                    </td>
-                                    <td>
-                                      <div className="product-quantity">
-                                        <span className="quantity-btn">
-                                          <i
-                                            data-feather="minus-circle"
-                                            className="feather-search"
-                                          />
-                                        </span>
-                                        <input
-                                          type="text"
-                                          className="quntity-input"
-                                          defaultValue={2}
-                                        />
-                                        <span className="quantity-btn">
-                                          +
-                                          <i
-                                            data-feather="plus-circle"
-                                            className="plus-circle"
-                                          />
-                                        </span>
-                                      </div>
-                                    </td>
-                                    <td>
-                                      <div className="add-product">
-                                        <input
-                                          type="text"
-                                          className="form-control"
-                                          defaultValue={50000}
-                                        />
-                                      </div>
-                                    </td>
-                                    <td className="action-table-data">
-                                      <div className="edit-delete-action">
-                                        <div className="input-block add-lists">
-                                          <label className="checkboxs">
-                                            <input
-                                              type="checkbox"
-                                              defaultChecked=""
-                                            />
-                                            <span className="checkmarks" />
-                                          </label>
-                                        </div>
-                                        <Link
-                                          className="me-2 p-2"
-                                          to="#"
-                                          data-bs-toggle="modal"
-                                          data-bs-target="#add-variation"
-                                        >
-                                          <i
-                                            data-feather="plus"
-                                            className="feather-edit"
-                                          />
-                                        </Link>
-                                        <Link
-                                          className="confirm-text p-2"
-                                          to="#"
-                                        >
-                                          <i
-                                            data-feather="trash-2"
-                                            className="feather-trash-2"
-                                          />
-                                        </Link>
-                                      </div>
-                                    </td>
-                                  </tr>
-                                  <tr>
-                                    <td>
-                                      <div className="add-product">
-                                        <input
-                                          type="text"
-                                          className="form-control"
-                                          defaultValue="color"
-                                        />
-                                      </div>
-                                    </td>
-                                    <td>
-                                      <div className="add-product">
-                                        <input
-                                          type="text"
-                                          className="form-control"
-                                          defaultValue="black"
-                                        />
-                                      </div>
-                                    </td>
-                                    <td>
-                                      <div className="add-product">
-                                        <input
-                                          type="text"
-                                          className="form-control"
-                                          defaultValue={2345}
-                                        />
-                                      </div>
-                                    </td>
-                                    <td>
-                                      <div className="product-quantity">
-                                        <span className="quantity-btn">
-                                          <i
-                                            data-feather="minus-circle"
-                                            className="feather-search"
-                                          />
-                                        </span>
-                                        <input
-                                          type="text"
-                                          className="quntity-input"
-                                          defaultValue={3}
-                                        />
-                                        <span className="quantity-btn">
-                                          +
-                                          <i
-                                            data-feather="plus-circle"
-                                            className="plus-circle"
-                                          />
-                                        </span>
-                                      </div>
-                                    </td>
-                                    <td>
-                                      <div className="add-product">
-                                        <input
-                                          type="text"
-                                          className="form-control"
-                                          defaultValue={50000}
-                                        />
-                                      </div>
-                                    </td>
-                                    <td className="action-table-data">
-                                      <div className="edit-delete-action">
-                                        <div className="input-block add-lists">
-                                          <label className="checkboxs">
-                                            <input
-                                              type="checkbox"
-                                              defaultChecked=""
-                                            />
-                                            <span className="checkmarks" />
-                                          </label>
-                                        </div>
-                                        <Link
-                                          className="me-2 p-2"
-                                          to="#"
-                                          data-bs-toggle="modal"
-                                          data-bs-target="#edit-units"
-                                        >
-                                          <i
-                                            data-feather="plus"
-                                            className="feather-edit"
-                                          />
-                                        </Link>
-                                        <Link
-                                          className="confirm-text p-2"
-                                          to="#"
-                                        >
-                                          <i
-                                            data-feather="trash-2"
-                                            className="feather-trash-2"
-                                          />
-                                        </Link>
-                                      </div>
-                                    </td>
-                                  </tr>
-                                </tbody>
-                              </table>
                             </div>
                           </div>
                         </div>
@@ -818,129 +293,25 @@ const AddProduct = () => {
                   </div>
                 </div>
               </div>
-              <div
-                className="accordion-card-one accordion"
-                id="accordionExample4"
-              >
-                <div className="accordion-item">
-                  <div className="accordion-header" id="headingFour">
-                    <div
-                      className="accordion-button"
-                      data-bs-toggle="collapse"
-                      data-bs-target="#collapseFour"
-                      aria-controls="collapseFour"
-                    >
-                      <div className="text-editor add-list">
-                        <div className="addproduct-icon list">
-                          <h5>
-                            <List className="add-info" />
-                            <span>Custom Fields</span>
-                          </h5>
-                          <Link to="#">
-                            <ChevronDown className="chevron-down-add" />
-                          </Link>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div
-                    id="collapseFour"
-                    className="accordion-collapse collapse show"
-                    aria-labelledby="headingFour"
-                    data-bs-parent="#accordionExample4"
-                  >
-                    <div className="accordion-body">
-                      <div className="text-editor add-list add">
-                        <div className="custom-filed">
-                          <div className="input-block add-lists">
-                            <label className="checkboxs">
-                              <input type="checkbox" />
-                              <span className="checkmarks" />
-                              Warranties
-                            </label>
-                            <label className="checkboxs">
-                              <input type="checkbox" />
-                              <span className="checkmarks" />
-                              Manufacturer
-                            </label>
-                            <label className="checkboxs">
-                              <input type="checkbox" />
-                              <span className="checkmarks" />
-                              Expiry
-                            </label>
-                          </div>
-                        </div>
-                        <div className="row">
-                          <div className="col-lg-4 col-sm-6 col-12">
-                            <div className="input-blocks add-product">
-                              <label>Discount Type</label>
-                              <Select
-                                classNamePrefix="react-select"
-                                options={discounttype1}
-                                placeholder="Choose"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                        <div className="row">
-                          <div className="col-lg-4 col-sm-6 col-12">
-                            <div className="input-blocks add-product">
-                              <label>Quantity Alert</label>
-                              <input type="text" className="form-control" />
-                            </div>
-                          </div>
-                          <div className="col-lg-4 col-sm-6 col-12">
-                            <div className="input-blocks">
-                              <label>Manufactured Date</label>
-                              <div className="input-groupicon calender-input">
-                                <Calendar className="info-img" />
-                                <DatePicker
-                                  selected={selectedDate}
-                                  onChange={handleDateChange}
-                                  type="date"
-                                  className="datetimepicker"
-                                  dateFormat="dd-MM-yyyy"
-                                  placeholder="Choose Date"
-                                />
-                              </div>
-                            </div>
-                          </div>
-                          <div className="col-lg-4 col-sm-6 col-12">
-                            <div className="input-blocks">
-                              <label>Expiry On</label>
-                              <div className="input-groupicon calender-input">
-                                <Calendar className="info-img" />
-                                <DatePicker
-                                  selected={selectedDate1}
-                                  onChange={handleDateChange1}
-                                  type="date"
-                                  className="datetimepicker"
-                                  dateFormat="dd-MM-yyyy"
-                                  placeholder="Choose Date"
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div> */}
             </div>
           </div>
+          {/* Botones de acción */}
           <div className="col-lg-12">
             <div className="btn-addproduct mb-4">
-              <button type="button" className="btn btn-cancel me-2">
-                Cancel
+              <button
+                type="button"
+                className="btn btn-cancel me-2"
+                onClick={() => navigate(route.productlist)}
+              >
+                Cancelar
               </button>
-              <Link to={route.addproduct} className="btn btn-submit">
-                Save Product
-              </Link>
+              <button type="submit" className="btn btn-submit">
+                Guardar Producto
+              </button>
             </div>
           </div>
         </form>
-        {/* /add */}
+        {/* /formulario */}
       </div>
       <AddCategory />
     </div>

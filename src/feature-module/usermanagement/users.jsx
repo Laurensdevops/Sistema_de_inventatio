@@ -2,9 +2,8 @@ import React, { useState } from "react";
 import { OverlayTrigger, Tooltip } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import ImageWithBasePath from "../../core/img/imagewithbasebath";
-import { ChevronUp, RotateCcw } from "feather-icons-react/build/IconComponents";
-import { setToogleHeader } from "../../core/redux/action";
-import { useDispatch, useSelector } from "react-redux";
+import { RotateCcw } from "feather-icons-react/build/IconComponents";
+import { useSelector } from "react-redux";
 import {
   Filter,
   PlusCircle,
@@ -42,8 +41,6 @@ const Users = () => {
     { value: "Salesman", label: "Salesman" },
   ];
 
-  const dispatch = useDispatch();
-  const data = useSelector((state) => state.toggle_header);
   const dataSource = useSelector((state) => state.userlist_data);
   const [isFilterVisible, setIsFilterVisible] = useState(false);
   const toggleFilterVisibility = () => {
@@ -68,11 +65,6 @@ const Users = () => {
   const renderRefreshTooltip = (props) => (
     <Tooltip id="refresh-tooltip" {...props}>
       Refresh
-    </Tooltip>
-  );
-  const renderCollapseTooltip = (props) => (
-    <Tooltip id="refresh-tooltip" {...props}>
-      Collapse
     </Tooltip>
   );
 
@@ -231,21 +223,6 @@ const Users = () => {
                 <OverlayTrigger placement="top" overlay={renderRefreshTooltip}>
                   <Link data-bs-toggle="tooltip" data-bs-placement="top">
                     <RotateCcw />
-                  </Link>
-                </OverlayTrigger>
-              </li>
-              <li>
-                <OverlayTrigger placement="top" overlay={renderCollapseTooltip}>
-                  <Link
-                    data-bs-toggle="tooltip"
-                    data-bs-placement="top"
-                    id="collapse-header"
-                    className={data ? "active" : ""}
-                    onClick={() => {
-                      dispatch(setToogleHeader(!data));
-                    }}
-                  >
-                    <ChevronUp />
                   </Link>
                 </OverlayTrigger>
               </li>

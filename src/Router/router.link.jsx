@@ -29,7 +29,7 @@ import Signin from "../feature-module/pages/login/signin";
 // import Forgotpassword from "../feature-module/pages/forgotpassword/forgotpassword";
 // import Twostepverification from "../feature-module/pages/twostepverification/twostepverification";
 // import Lockscreen from "../feature-module/pages/lockscreen";
-// import Error404 from "../feature-module/pages/errorpages/error404";
+import Error404 from "../feature-module/pages/errorpages/error404";
 // import Error500 from "../feature-module/pages/errorpages/error500";
 // import Blankpage from "../feature-module/pages/blankpage";
 // import Comingsoon from "../feature-module/pages/comingsoon";
@@ -49,16 +49,19 @@ export const publicRoutes = [
   {
     id: 1,
     path: routes.productlist,
-    name: "products",
+    name: "productsList",
     element: <ProductList />,
+    allowedRoles: ['admin'],
+    // allowedRoles: ['admin', 'manager', 'seller', 'courier'],
     route: Route,
   },
   {
     id: 2,
     path: routes.addproduct,
-    name: "products",
+    name: "productAdd",
     element: <AddProduct />,
     route: Route,
+    allowedRoles: ['admin', 'manager', 'seller'],
   },
   {
     id: 3,
@@ -66,6 +69,7 @@ export const publicRoutes = [
     name: "categorylist",
     element: <CategoryList />,
     route: Route,
+    allowedRoles: ['admin'],
   },
   {
     id: 64,
@@ -73,6 +77,8 @@ export const publicRoutes = [
     name: "subcategories",
     element: <SubCategories />,
     route: Route,
+    allowedRoles: ['admin'],
+
   },
   {
     id: 65,
@@ -80,6 +86,8 @@ export const publicRoutes = [
     name: "editproduct",
     element: <EditProduct />,
     route: Route,
+    allowedRoles: ['admin'],
+
   },
   // {
   //   id: 67,
@@ -94,6 +102,8 @@ export const publicRoutes = [
     name: "customers",
     element: <Customers />,
     route: Route,
+    allowedRoles: ['admin'],
+
   },
   // {
   //   id: 85,
@@ -115,6 +125,8 @@ export const publicRoutes = [
     name: "managestock",
     element: <Managestock />,
     route: Route,
+    allowedRoles: ['admin'],
+
   },
   {
     id: 88,
@@ -122,6 +134,8 @@ export const publicRoutes = [
     name: "stockadjustment",
     element: <StockAdjustment />,
     route: Route,
+    allowedRoles: ['admin'],
+
   },
   {
     id: 92,
@@ -129,6 +143,8 @@ export const publicRoutes = [
     name: "inventoryreport",
     element: <InventoryReport />,
     route: Route,
+    allowedRoles: ['admin'],
+
   },
   {
     id: 5,
@@ -136,6 +152,8 @@ export const publicRoutes = [
     name: "invoicecreate",
     element: <InvoiceCreate />,
     route: Route,
+    allowedRoles: ['admin'],
+
   },
   {
     id: 10001,
@@ -143,6 +161,7 @@ export const publicRoutes = [
     name: "invoices",
     element: <Invoices />,
     route: Route,
+    allowedRoles: ['admin'],
   },
   {
     id: 93,
@@ -150,6 +169,8 @@ export const publicRoutes = [
     name: "invoicereport",
     element: <Invoicereport />,
     route: Route,
+    allowedRoles: ['admin'],
+
   },
   {
     id: 95,
@@ -157,6 +178,8 @@ export const publicRoutes = [
     name: "customerreport",
     element: <CustomerReport />,
     route: Route,
+    allowedRoles: ['admin'],
+
   },
   {
     id: 89,
@@ -164,6 +187,8 @@ export const publicRoutes = [
     name: "generalsettings",
     element: <GeneralSettings />,
     route: Route,
+    allowedRoles: ['admin'],
+
   },
   {
     id: 99,
@@ -171,6 +196,8 @@ export const publicRoutes = [
     name: "preference",
     element: <Preference />,
     route: Route,
+    allowedRoles: ['admin'],
+
   },
   {
     id: 102,
@@ -192,6 +219,8 @@ export const publicRoutes = [
     name: "users",
     element: <Users />,
     route: Route,
+    allowedRoles: ['admin'],
+
   },
   {
     id: 105,
@@ -199,6 +228,8 @@ export const publicRoutes = [
     name: "rolespermission",
     element: <RolesPermissions />,
     route: Route,
+    allowedRoles: ['admin'],
+
   },
   {
     id: 106,
@@ -206,6 +237,8 @@ export const publicRoutes = [
     name: "permissions",
     element: <Permissions />,
     route: Route,
+    allowedRoles: ['admin'],
+
   },
   {
     id: 107,
@@ -213,6 +246,8 @@ export const publicRoutes = [
     name: "deleteaccount",
     element: <DeleteAccount />,
     route: Route,
+    allowedRoles: ['admin'],
+
   },
   {
     id: 113,
@@ -220,6 +255,8 @@ export const publicRoutes = [
     name: "productdetails",
     element: <ProductDetail />,
     route: Route,
+    allowedRoles: ['admin'],
+
   },
   // {
   //   id: 114,
@@ -234,6 +271,8 @@ export const publicRoutes = [
     name: "coupons",
     element: <Coupons />,
     route: Route,
+    allowedRoles: ['admin'],
+
   },
   {
     id: 116,
@@ -248,6 +287,8 @@ export const publicRoutes = [
     name: 'Root',
     element: <Navigate to="/signin" />,
     route: Route,
+    allowedRoles: ['admin', 'manager', 'seller', 'courier'],
+
   },
 ];
 
@@ -258,6 +299,7 @@ export const pagesRoute = [
     name: "signin",
     element: <Signin />,
     route: Route,
+    allowedRoles: ['admin', 'manager', 'seller', 'courier'],
   },
   // {
   //   id: 7,
@@ -287,13 +329,15 @@ export const pagesRoute = [
   //   element: <Lockscreen />,
   //   route: Route,
   // },
-  // {
-  //   id: 18,
-  //   path: routes.error404,
-  //   name: "error404",
-  //   element: <Error404 />,
-  //   route: Route,
-  // },
+  {
+    id: 18,
+    path: routes.error404,
+    name: "error404",
+    element: <Error404 />,
+    route: Route,
+    allowedRoles: ['admin', 'manager', 'seller', 'courier'],
+
+  },
   // {
   //   id: 19,
   //   path: routes.error500,

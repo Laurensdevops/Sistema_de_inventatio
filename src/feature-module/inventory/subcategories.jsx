@@ -3,7 +3,6 @@ import ImageWithBasePath from "../../core/img/imagewithbasebath";
 import { OverlayTrigger, Tooltip } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import {
-  ChevronUp,
   Filter,
   PlusCircle,
   RotateCcw,
@@ -11,8 +10,7 @@ import {
   StopCircle,
   Zap,
 } from "feather-icons-react/build/IconComponents";
-import { useDispatch, useSelector } from "react-redux";
-import { setToogleHeader } from "../../core/redux/action";
+import { useSelector } from "react-redux";
 import Select from "react-select";
 import AddSubcategory from "../../core/modals/inventory/addsubcategory";
 import EditSubcategories from "./editsubcategories";
@@ -21,8 +19,6 @@ import Swal from "sweetalert2";
 import Table from "../../core/pagination/datatable";
 
 const SubCategories = () => {
-  const dispatch = useDispatch();
-  const data = useSelector((state) => state.toggle_header);
   const dataSource = useSelector((state) => state.subcategory_data);
 
   const oldandlatestvalue = [
@@ -70,11 +66,6 @@ const SubCategories = () => {
   const renderRefreshTooltip = (props) => (
     <Tooltip id="refresh-tooltip" {...props}>
       Refresh
-    </Tooltip>
-  );
-  const renderCollapseTooltip = (props) => (
-    <Tooltip id="refresh-tooltip" {...props}>
-      Collapse
     </Tooltip>
   );
   const columns = [
@@ -213,21 +204,6 @@ const SubCategories = () => {
                 <OverlayTrigger placement="top" overlay={renderRefreshTooltip}>
                   <Link data-bs-toggle="tooltip" data-bs-placement="top">
                     <RotateCcw />
-                  </Link>
-                </OverlayTrigger>
-              </li>
-              <li>
-                <OverlayTrigger placement="top" overlay={renderCollapseTooltip}>
-                  <Link
-                    data-bs-toggle="tooltip"
-                    data-bs-placement="top"
-                    id="collapse-header"
-                    className={data ? "active" : ""}
-                    onClick={() => {
-                      dispatch(setToogleHeader(!data));
-                    }}
-                  >
-                    <ChevronUp />
                   </Link>
                 </OverlayTrigger>
               </li>

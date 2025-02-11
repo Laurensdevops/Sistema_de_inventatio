@@ -1,26 +1,16 @@
-import { ChevronUp, PlusCircle, RotateCcw, User } from 'feather-icons-react/build/IconComponents'
+import { PlusCircle, RotateCcw, User } from 'feather-icons-react/build/IconComponents'
 import React from 'react'
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
-import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom'
-import { setToogleHeader } from '../../../core/redux/action';
 import SettingsSidebar from '../settingssidebar';
 
 const GeneralSettings = () => {
-
-    const dispatch = useDispatch();
-    const data = useSelector((state) => state.toggle_header);
 
     const renderRefreshTooltip = (props) => (
         <Tooltip id="refresh-tooltip" {...props}>
             Refresh
         </Tooltip>
     );
-    const renderCollapseTooltip = (props) => (
-        <Tooltip id="refresh-tooltip" {...props}>
-            Collapse
-        </Tooltip>
-    )
     return (
         <div>
             <div className="page-wrapper">
@@ -41,21 +31,6 @@ const GeneralSettings = () => {
                                     </Link>
                                 </OverlayTrigger>
                             </li>
-                            <li>
-                                <OverlayTrigger placement="top" overlay={renderCollapseTooltip}>
-
-                                    <Link
-                                        data-bs-toggle="tooltip"
-                                        data-bs-placement="top"
-                                        id="collapse-header"
-                                        className={data ? "active" : ""}
-                                        onClick={() => {dispatch(setToogleHeader(!data)) }}
-                                    >
-                                        <ChevronUp />
-                                    </Link>
-                                </OverlayTrigger>
-                            </li>
-
                         </ul>
                     </div>
                     <div className="row">

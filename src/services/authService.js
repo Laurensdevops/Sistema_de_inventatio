@@ -4,10 +4,10 @@ export const login = async (email, password) => {
   try {
     const response = await apiRequest("users/login", "POST", { email, password });
 
+    localStorage.setItem("user", JSON.stringify(response.user));
     localStorage.setItem("token", response.token);
-    localStorage.setItem("user", JSON.stringify(response.user)); 
 
-    return response.user;
+    return response;
   } catch (error) {
     console.error("Error en login:", error);
     throw error;
@@ -21,9 +21,8 @@ export const logout = async () => {
     console.error("Error al cerrar sesión:", error);
   }
 
-  localStorage.removeItem("token");
   localStorage.removeItem("user");
-  window.location.reload(); 
+  localStorage.removeItem("token");
 };
 
 export const getUser = async () => {

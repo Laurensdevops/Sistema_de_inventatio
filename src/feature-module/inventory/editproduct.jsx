@@ -8,7 +8,6 @@ import {
   ArrowLeft,
   Calendar,
   ChevronDown,
-  ChevronUp,
   Info,
   LifeBuoy,
   List,
@@ -16,16 +15,11 @@ import {
   Trash2,
   X,
 } from "feather-icons-react/build/IconComponents";
-import { useDispatch, useSelector } from "react-redux";
-import { setToogleHeader } from "../../core/redux/action";
-import { OverlayTrigger, Tooltip } from "react-bootstrap";
 import ImageWithBasePath from "../../core/img/imagewithbasebath";
 
 const EditProduct = () => {
   const route = all_routes;
-  const dispatch = useDispatch();
 
-  const data = useSelector((state) => state.toggle_header);
 
   const [selectedDate, setSelectedDate] = useState(new Date());
   const handleDateChange = (date) => {
@@ -35,11 +29,6 @@ const EditProduct = () => {
   const handleDateChange1 = (date) => {
     setSelectedDate1(date);
   };
-  const renderCollapseTooltip = (props) => (
-    <Tooltip id="refresh-tooltip" {...props}>
-      Collapse
-    </Tooltip>
-  );
   const store = [
     { value: "choose", label: "Choose" },
     { value: "thomas", label: "Thomas" },
@@ -129,22 +118,6 @@ const EditProduct = () => {
                   Back to Product
                 </Link>
               </div>
-            </li>
-            <li>
-              <OverlayTrigger placement="top" overlay={renderCollapseTooltip}>
-                <Link
-                  data-bs-toggle="tooltip"
-                  data-bs-placement="top"
-                  title="Collapse"
-                  id="collapse-header"
-                  className={data ? "active" : ""}
-                  onClick={() => {
-                    dispatch(setToogleHeader(!data));
-                  }}
-                >
-                  <ChevronUp className="feather-chevron-up" />
-                </Link>
-              </OverlayTrigger>
             </li>
           </ul>
         </div>

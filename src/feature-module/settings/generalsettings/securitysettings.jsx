@@ -1,15 +1,11 @@
-import { Box, ChevronUp, EyeOff, Mail, Phone, RotateCcw, Shield, Tool } from 'feather-icons-react/build/IconComponents'
+import { Box, EyeOff, Mail, Phone, RotateCcw, Shield, Tool } from 'feather-icons-react/build/IconComponents'
 import React from 'react'
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom'
-import { setToogleHeader } from '../../../core/redux/action';
 import SettingsSideBar from '../settingssidebar';
 
 const SecuritySettings = () => {
-
-    const dispatch = useDispatch();
-    const data = useSelector((state) => state.toggle_header);
 
     const renderRefreshTooltip = (props) => (
         <Tooltip id="refresh-tooltip" {...props}>
@@ -41,21 +37,6 @@ const SecuritySettings = () => {
                                     </Link>
                                 </OverlayTrigger>
                             </li>
-                            <li>
-                                <OverlayTrigger placement="top" overlay={renderCollapseTooltip}>
-
-                                    <Link
-                                        data-bs-toggle="tooltip"
-                                        data-bs-placement="top"
-                                        id="collapse-header"
-                                        className={data ? "active" : ""}
-                                        onClick={() => { dispatch(setToogleHeader(!data)) }}
-                                    >
-                                        <ChevronUp />
-                                    </Link>
-                                </OverlayTrigger>
-                            </li>
-
                         </ul>
                     </div>
                     <div className="row">
