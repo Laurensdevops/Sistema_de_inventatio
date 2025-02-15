@@ -1,7 +1,8 @@
 import React, { useState } from "react";
+import PropTypes from "prop-types";
 import { createCategory } from "../../../services/categoryService"; // Asegúrate de que la ruta sea la correcta
 
-const AddCategory = () => {
+const AddCategory = ({ refreshCategories }) => {
   const [categoryName, setCategoryName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -23,12 +24,24 @@ const AddCategory = () => {
       // Llamar al servicio pasando el objeto { name: categoryName }
       await createCategory({ name: categoryName });
       
-      // Opcional: aquí podrías actualizar la lista de categorías o notificar al usuario
-      setCategoryName(""); // Limpiar el input
+      // Actualizar la lista de categorías
+      refreshCategories();
       
-      // Opcional: cerrar el modal programáticamente si lo deseas.  
-      // Si usas Bootstrap, puedes hacerlo utilizando su API (por ejemplo, mediante jQuery o refs)
-      
+      // Limpiar el input
+      setCategoryName("");
+
+      // Cerrar el modal programáticamente (usando la API de Bootstrap 5)
+      const modalElement = document.getElementById("add-units-category");
+      if (modalElement && window.bootstrap) {
+        const modalInstance = window.bootstrap.Modal.getInstance(modalElement);
+        if (modalInstance) {
+          modalInstance.hide();
+        } else {
+          // Si no existe una instancia, crear una y luego ocultarla
+          const newModalInstance = new window.bootstrap.Modal(modalElement);
+          newModalInstance.hide();
+        }
+      }
     } catch (err) {
       console.error("Error al crear categoría:", err);
       setError("Ocurrió un error al crear la categoría.");
@@ -93,6 +106,10 @@ const AddCategory = () => {
       </div>
     </>
   );
+};
+
+AddCategory.propTypes = {
+  refreshCategories: PropTypes.func.isRequired,
 };
 
 export default AddCategory;

@@ -74,6 +74,33 @@ export interface UserAuthOperations {
 export interface User {
   id: string;
   role: 'admin' | 'manager' | 'seller' | 'courier';
+  province:
+    | 'Distrito Nacional'
+    | 'Santo Domingo Este'
+    | 'Santo Domingo Norte'
+    | 'Santo Domingo Oeste'
+    | 'La Altagracia'
+    | 'El Seibo'
+    | 'Hato Mayor'
+    | 'La Romana'
+    | 'Puerto Plata'
+    | 'Santiago'
+    | 'Duarte'
+    | 'Samaná'
+    | 'La Vega'
+    | 'María Trinidad Sánchez'
+    | 'Santiago Rodríguez'
+    | 'Barahona'
+    | 'San Juan'
+    | 'Bahoruco'
+    | 'Peravia'
+    | 'Azua'
+    | 'San Cristóbal'
+    | 'Monte Plata'
+    | 'Valverde'
+    | 'Sánchez Ramírez'
+    | 'Monseñor Nouel'
+    | 'Hermanas Mirabal';
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -91,7 +118,7 @@ export interface User {
  */
 export interface Media {
   id: string;
-  alt: string;
+  alt?: string | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -160,6 +187,7 @@ export interface Client {
   phone: string;
   email: string;
   address: string;
+  paymentMethod: 'efectivo' | 'tarjeta';
   updatedAt: string;
   createdAt: string;
 }
@@ -172,15 +200,23 @@ export interface Invoice {
   invoiceNumber: string;
   Client: string | Client;
   invoiceDate: string;
-  issuedBy: string;
   creationDate: string;
-  status: 'tomada' | 'en_empaquetado' | 'enviada' | 'completada';
+  createdBy: string | User;
+  status: 'pendiente' | 'en_empaquetado' | 'enviada' | 'confirmada' | 'completada' | 'cancelada';
   items: {
     productName: string;
     quantity: number;
+    price: number;
     id?: string | null;
   }[];
+  total: number;
   notes?: string | null;
+  region: string;
+  province?: string | null;
+  paymentMethod: 'efectivo' | 'tarjeta';
+  tariff: number;
+  assignedCourier?: (string | null) | User;
+  stockDeducted?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -267,6 +303,7 @@ export interface PayloadMigration {
  */
 export interface UsersSelect<T extends boolean = true> {
   role?: T;
+  province?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -349,6 +386,7 @@ export interface ClientsSelect<T extends boolean = true> {
   phone?: T;
   email?: T;
   address?: T;
+  paymentMethod?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -360,17 +398,25 @@ export interface InvoicesSelect<T extends boolean = true> {
   invoiceNumber?: T;
   Client?: T;
   invoiceDate?: T;
-  issuedBy?: T;
   creationDate?: T;
+  createdBy?: T;
   status?: T;
   items?:
     | T
     | {
         productName?: T;
         quantity?: T;
+        price?: T;
         id?: T;
       };
+  total?: T;
   notes?: T;
+  region?: T;
+  province?: T;
+  paymentMethod?: T;
+  tariff?: T;
+  assignedCourier?: T;
+  stockDeducted?: T;
   updatedAt?: T;
   createdAt?: T;
 }

@@ -27,7 +27,7 @@ const Categories: CollectionConfig = {
     },
   ],
     access: {
-      read: roleAccess(["admin", "manager", "seller"]),
+      read: roleAccess(["admin", "manager", "seller", "courier"]),
       create: roleAccess(["admin", "manager"]),
       update: roleAccess(["admin", "manager", "seller"]),
       delete: roleAccess(["admin"]),

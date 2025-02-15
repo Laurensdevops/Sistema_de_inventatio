@@ -51,7 +51,7 @@ export const publicRoutes = [
     path: routes.productlist,
     name: "productsList",
     element: <ProductList />,
-    allowedRoles: ['admin'],
+    allowedRoles: ['admin', 'courier'],
     // allowedRoles: ['admin', 'manager', 'seller', 'courier'],
     route: Route,
   },
@@ -161,7 +161,7 @@ export const publicRoutes = [
     name: "invoices",
     element: <Invoices />,
     route: Route,
-    allowedRoles: ['admin'],
+    allowedRoles: ['admin', 'courier'],
   },
   {
     id: 93,

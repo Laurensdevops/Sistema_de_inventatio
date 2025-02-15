@@ -1,239 +1,439 @@
-import React, { useState } from "react";
-import Breadcrumbs from "../../core/breadcrumbs";
-import { Link } from "react-router-dom";
-import { Filter, Sliders } from "react-feather";
-import ImageWithBasePath from "../../core/img/imagewithbasebath";
+// src/feature-module/users/UsersList.jsx
+import React, { useState, useEffect } from "react";
+import {
+  OverlayTrigger,
+  Tooltip,
+  Modal,
+  Button,
+  Form,
+} from "react-bootstrap";
+import { PlusCircle, RotateCcw } from "feather-icons-react/build/IconComponents";
+import { Sliders, Edit, Trash2 } from "react-feather";
 import Select from "react-select";
-import { Edit, Eye, Globe, Trash2, User } from "react-feather";
-import { useSelector } from "react-redux";
 import Table from "../../core/pagination/datatable";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 
-const Customers = () => {
-  const data = useSelector((state) => state.customerdata);
+// Importa los servicios para usuarios
+import { getUsers, deleteUser, createUser, updateUser } from "../../services/usersService";
 
-  const [isFilterVisible, setIsFilterVisible] = useState(false);
-  const toggleFilterVisibility = () => {
-    setIsFilterVisible((prevVisibility) => !prevVisibility);
-  };
+// Opciones para provincias (según la configuración de tu colección)
+const provincesOptions = [
+  { label: "Distrito Nacional", value: "Distrito Nacional" },
+  { label: "Santo Domingo Este", value: "Santo Domingo Este" },
+  { label: "Santo Domingo Norte", value: "Santo Domingo Norte" },
+  { label: "Santo Domingo Oeste", value: "Santo Domingo Oeste" },
+  { label: "La Altagracia", value: "La Altagracia" },
+  { label: "El Seibo", value: "El Seibo" },
+  { label: "Hato Mayor", value: "Hato Mayor" },
+  { label: "La Romana", value: "La Romana" },
+  { label: "Puerto Plata", value: "Puerto Plata" },
+  { label: "Santiago", value: "Santiago" },
+  { label: "Duarte", value: "Duarte" },
+  { label: "Samaná", value: "Samaná" },
+  { label: "La Vega", value: "La Vega" },
+  { label: "María Trinidad Sánchez", value: "María Trinidad Sánchez" },
+  { label: "Santiago Rodríguez", value: "Santiago Rodríguez" },
+  { label: "Barahona", value: "Barahona" },
+  { label: "San Juan", value: "San Juan" },
+  { label: "Bahoruco", value: "Bahoruco" },
+  { label: "Peravia", value: "Peravia" },
+  { label: "Azua", value: "Azua" },
+  { label: "San Cristóbal", value: "San Cristóbal" },
+  { label: "Monte Plata", value: "Monte Plata" },
+  { label: "Valverde", value: "Valverde" },
+  { label: "Sánchez Ramírez", value: "Sánchez Ramírez" },
+  { label: "Monseñor Nouel", value: "Monseñor Nouel" },
+  { label: "Hermanas Mirabal", value: "Hermanas Mirabal" },
+];
 
-  const options = [
-    { value: "sortByDate", label: "Ordenar por fecha" },
-    { value: "140923", label: "14 09 23" },
-    { value: "110923", label: "11 09 23" },
-  ];
-  const optionsTwo = [
-    { label: "Nombre", value: "" },
-    { label: "Benjamin", value: "Benjamin" },
-  ];
+// Opciones para rol
+const roleOptions = [
+  { label: "Admin", value: "admin" },
+  { label: "Gerente", value: "manager" },
+  { label: "Vendedor", value: "seller" },
+  { label: "Mensajero", value: "courier" },
+];
 
-  const countries = [
-    { label: "Ciudad", value: "" },
-    { label: "S.D", value: "SD" },
-  ];
+// Opciones para ordenar la tabla
+const sortOptions = [
+  { value: "role", label: "Ordenar por rol" },
+  { value: "province", label: "Ordenar por provincia" },
+];
 
-  const columns = [
-    {
-      title: "Nombre",
-      dataIndex: "CustomerName",
-      sorter: (a, b) => a.CustomerName.length - b.CustomerName.length,
-    },
-    {
-      title: "id",
-      dataIndex: "Code",
-      sorter: (a, b) => a.Code.length - b.Code.length,
-    },
+const UsersList = () => {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-    {
-      title: "Email",
-      dataIndex: "Email",
-      sorter: (a, b) => a.Email.length - b.Email.length,
-    },
-
-    {
-      title: "telefono",
-      dataIndex: "Phone",
-      sorter: (a, b) => a.Phone.length - b.Phone.length,
-    },
-
-    {
-      title: "Ciudad",
-      dataIndex: "Country",
-      sorter: (a, b) => a.Country.length - b.Country.length,
-    },
-
-    {
-      title: "accion",
-      dataIndex: "action",
-      render: () => (
-        <div className="action-table-data">
-          <div className="edit-delete-action">
-            <div className="input-block add-lists"></div>
-
-            <Link className="me-2 p-2" to="#">
-              <Eye className="feather-view" />
-            </Link>
-
-            <Link
-              className="me-2 p-2"
-              to="#"
-              data-bs-toggle="modal"
-              data-bs-target="#edit-units"
-            >
-              <Edit className="feather-edit" />
-            </Link>
-
-            <Link
-              className="confirm-text p-2"
-              to="#"
-              onClick={showConfirmationAlert}
-            >
-              <Trash2 className="feather-trash-2" />
-            </Link>
-          </div>
-        </div>
-      ),
-      sorter: (a, b) => a.createdby.length - b.createdby.length,
-    },
-  ];
+  // Estado para el modal de creación/edición de usuario
+  const [showModal, setShowModal] = useState(false);
+  // Si editingUser es null, se está creando; si tiene valor, se está editando ese usuario
+  const [editingUser, setEditingUser] = useState(null);
+  const [newUser, setNewUser] = useState({
+    email: "",
+    password: "",
+    confirmPassword: "",
+    province: "",
+    role: "",
+  });
+  const [modalLoading, setModalLoading] = useState(false);
+  const [modalError, setModalError] = useState("");
 
   const MySwal = withReactContent(Swal);
 
-  const showConfirmationAlert = () => {
+  // Función para cargar usuarios
+  const loadUsers = async () => {
+    try {
+      const response = await getUsers();
+      setUsers(response);
+    } catch (error) {
+      console.error("Error al cargar usuarios:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
+  // Función para eliminar usuario con confirmación
+  const handleDeleteUser = (user) => {
     MySwal.fire({
-      title: "Are you sure?",
-      text: "You won't be able to revert this!",
+      title: "¿Estás seguro?",
+      text: "¡No podrás revertir esta acción!",
+      icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#00ff00",
-      confirmButtonText: "Yes, delete it!",
       cancelButtonColor: "#ff0000",
-      cancelButtonText: "Cancel",
-    }).then((result) => {
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
+    }).then(async (result) => {
       if (result.isConfirmed) {
-        MySwal.fire({
-          title: "Deleted!",
-          text: "Your file has been deleted.",
-          className: "btn btn-success",
-          confirmButtonText: "OK",
-          customClass: {
-            confirmButton: "btn btn-success",
-          },
-        });
-      } else {
-        MySwal.close();
+        try {
+          await deleteUser(user.id || user._id);
+          MySwal.fire({
+            title: "Eliminado!",
+            text: "El usuario ha sido eliminado.",
+            icon: "success",
+            confirmButtonText: "OK",
+          });
+          loadUsers();
+        } catch (error) {
+          MySwal.fire({
+            title: "Error!",
+            text: "No se pudo eliminar el usuario.",
+            icon: "error",
+            confirmButtonText: "OK",
+          });
+        }
       }
     });
   };
+
+  // Función para manejar los cambios en el formulario del modal
+  const handleModalInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewUser((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // Función para abrir el modal en modo edición y pre-cargar los datos
+  const handleEditUser = (user) => {
+    setEditingUser(user);
+    setNewUser({
+      email: user.email,
+      password: "", // Las contraseñas no se muestran ni se editan directamente
+      confirmPassword: "",
+      province: user.province,
+      role: user.role,
+    });
+    setShowModal(true);
+  };
+
+  // Función para crear o actualizar un usuario al enviar el formulario
+  const handleCreateOrUpdateUser = async (e) => {
+    e.preventDefault();
+    // Validaciones
+    if (
+      !newUser.email ||
+      (!editingUser && (!newUser.password || !newUser.confirmPassword)) ||
+      !newUser.province ||
+      !newUser.role
+    ) {
+      setModalError("Todos los campos son obligatorios.");
+      return;
+    }
+    if (!editingUser && newUser.password !== newUser.confirmPassword) {
+      setModalError("Las contraseñas no coinciden.");
+      return;
+    }
+    setModalError("");
+    setModalLoading(true);
+    try {
+      if (editingUser) {
+        // Actualizar usuario (no se envía la contraseña si no se modificó)
+        const updateData = { ...newUser };
+        // Si la contraseña está vacía, la eliminamos del objeto para no actualizarla
+        if (!updateData.password) {
+          delete updateData.password;
+          delete updateData.confirmPassword;
+        }
+        await updateUser(editingUser.id || editingUser._id, updateData);
+        MySwal.fire({
+          title: "Actualizado!",
+          text: "El usuario ha sido actualizado.",
+          icon: "success",
+          confirmButtonText: "OK",
+        });
+      } else {
+        await createUser(newUser);
+        MySwal.fire({
+          title: "Creado!",
+          text: "El usuario ha sido creado.",
+          icon: "success",
+          confirmButtonText: "OK",
+        });
+      }
+      setShowModal(false);
+      loadUsers();
+      setNewUser({
+        email: "",
+        password: "",
+        confirmPassword: "",
+        province: "",
+        role: "",
+      });
+      setEditingUser(null);
+    } catch (error) {
+      setModalError("Error al crear/actualizar el usuario.");
+      console.error("Error:", error);
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
+  // Columnas de la tabla para mostrar usuarios
+  const columns = [
+    {
+      title: "Correo",
+      dataIndex: "email",
+      sorter: (a, b) => a.email.localeCompare(b.email),
+    },
+    {
+      title: "Rol",
+      dataIndex: "role",
+      sorter: (a, b) => a.role.localeCompare(b.role),
+    },
+    {
+      title: "Provincia",
+      dataIndex: "province",
+      sorter: (a, b) => a.province.localeCompare(b.province),
+    },
+    {
+      title: "Acciones",
+      dataIndex: "actions",
+      render: (text, record) => (
+        <div className="action-table-data">
+          <div className="edit-delete-action">
+            <button
+              className="me-2 p-2 btn btn-link"
+              onClick={() => handleEditUser(record)}
+            >
+              <Edit className="feather-edit" />
+            </button>
+            <button
+              className="p-2 btn btn-link"
+              onClick={() => handleDeleteUser(record)}
+            >
+              <Trash2 className="feather-trash-2" />
+            </button>
+          </div>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <div className="page-wrapper">
       <div className="content">
-        <Breadcrumbs
-          maintitle="Lista de empleado"
-          subtitle="sub title"
-          addButton="Agregar empleado"
-        />
-
-        {/* /product list */}
-        <div className="card table-list-card">
-          <div className="card-body">
-            <div className="table-top">
-              <div className="search-set">
-                <div className="search-input">
-                  <input
-                    type="text"
-                    placeholder="Buscar"
-                    className="form-control form-control-sm formsearch"
-                  />
-                  <Link to className="btn btn-searchset">
-                    <i data-feather="search" className="feather-search" />
-                  </Link>
-                </div>
-              </div>
-              <div className="search-path">
-                <Link
-                  className={`btn btn-filter ${
-                    isFilterVisible ? "setclose" : ""
-                  }`}
-                  id="filter_search"
-                >
-                  <Filter
-                    className="filter-icon"
-                    onClick={toggleFilterVisibility}
-                  />
-                  <span onClick={toggleFilterVisibility}>
-                    <ImageWithBasePath
-                      src="assets/img/icons/closes.svg"
-                      alt="img"
-                    />
-                  </span>
-                </Link>
-              </div>
-              <div className="form-sort stylewidth">
-                <Sliders className="info-img" />
-
-                <Select classNamePrefix="react-select"
-                  className="img-select"
-                  options={options}
-                  placeholder="Buscar por fecha"
-                />
-              </div>
-            </div>
-            {/* /Filter */}
-            <div
-              className={`card${isFilterVisible ? " visible" : ""}`}
-              id="filter_inputs"
-              style={{ display: isFilterVisible ? "block" : "none" }}
-            >
-              <div className="card-body pb-0">
-                <div className="row">
-                  <div className="col-lg-3 col-sm-6 col-12">
-                    <div className="input-blocks">
-                      <User className="info-img" />
-                      <Select className="img-select" classNamePrefix="react-select"
-                        options={optionsTwo}
-                        placeholder="por nombre"
-                      />
-                    </div>
-                  </div>
-                  <div className="col-lg-3 col-sm-6 col-12">
-                    <div className="input-blocks">
-                      <Globe className="info-img" />
-                      <Select className="img-select" classNamePrefix="react-select"
-                        options={countries}
-                        placeholder="Seleccionar ciudad"
-                      />
-                    </div>
-                  </div>
-                  <div className="col-lg-3 col-sm-6 col-12 ms-auto">
-                    <div className="input-blocks">
-                      <a className="btn btn-filters ms-auto">
-                        {" "}
-                        <i
-                          data-feather="search"
-                          className="feather-search"
-                        />{" "}
-                        Buscar{" "}
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            {/* /Filter */}
-            <div className="table-responsive">
-              <Table
-                className="table datanew"
-                columns={columns}
-                dataSource={data}
-              />
+        {/* Encabezado y Breadcrumbs (opcional) */}
+        <div className="page-header">
+          <div className="add-item d-flex">
+            <div className="page-title">
+              <h4>Usuarios</h4>
+              <h6>Gestiona usuarios</h6>
             </div>
           </div>
+          <ul className="table-top-head">
+            <li>
+              <OverlayTrigger
+                placement="top"
+                overlay={<Tooltip id="refresh-tooltip">Refrescar</Tooltip>}
+              >
+                <button onClick={loadUsers} className="btn btn-link">
+                  <RotateCcw />
+                </button>
+              </OverlayTrigger>
+            </li>
+            <li>
+              <button
+                className="btn btn-primary"
+                onClick={() => {
+                  setEditingUser(null);
+                  setNewUser({
+                    email: "",
+                    password: "",
+                    confirmPassword: "",
+                    province: "",
+                    role: "",
+                  });
+                  setShowModal(true);
+                }}
+              >
+                <PlusCircle className="me-2" />
+                Agregar Usuario
+              </button>
+            </li>
+          </ul>
         </div>
-        {/* /product list */}
+
+        {/* Filtros y ordenamiento (opcional) */}
+        <div className="table-top">
+          <div className="search-set">
+            <div className="search-input">
+              <input
+                type="text"
+                placeholder="Buscar"
+                className="form-control form-control-sm formsearch"
+              />
+              <button className="btn btn-searchset">
+                <i data-feather="search" className="feather-search" />
+              </button>
+            </div>
+          </div>
+          <div className="form-sort stylewidth">
+            <Sliders className="info-img" />
+            <Select
+              classNamePrefix="react-select"
+              className="img-select"
+              options={sortOptions}
+              placeholder="Ordenar"
+            />
+          </div>
+        </div>
+
+        {/* Tabla de usuarios */}
+        <div className="card table-list-card">
+          <div className="card-body">
+            {loading ? (
+              <p>Cargando usuarios...</p>
+            ) : (
+              <div className="table-responsive">
+                <Table
+                  className="table datanew"
+                  columns={columns}
+                  dataSource={users}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Modal para crear/editar un usuario */}
+        <Modal show={showModal} onHide={() => setShowModal(false)}>
+          <Modal.Header closeButton>
+            <Modal.Title>{editingUser ? "Editar Usuario" : "Crear Usuario"}</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <Form onSubmit={handleCreateOrUpdateUser}>
+              <Form.Group className="mb-3" controlId="userEmail">
+                <Form.Label>Correo</Form.Label>
+                <Form.Control
+                  type="email"
+                  name="email"
+                  value={newUser.email}
+                  onChange={handleModalInputChange}
+                  required
+                />
+              </Form.Group>
+              {/* Solo en creación se solicitan las contraseñas */}
+              {!editingUser && (
+                <>
+                  <Form.Group className="mb-3" controlId="userPassword">
+                    <Form.Label>Contraseña</Form.Label>
+                    <Form.Control
+                      type="password"
+                      name="password"
+                      value={newUser.password}
+                      onChange={handleModalInputChange}
+                      required
+                    />
+                  </Form.Group>
+                  <Form.Group className="mb-3" controlId="userConfirmPassword">
+                    <Form.Label>Confirmar Contraseña</Form.Label>
+                    <Form.Control
+                      type="password"
+                      name="confirmPassword"
+                      value={newUser.confirmPassword}
+                      onChange={handleModalInputChange}
+                      required
+                    />
+                  </Form.Group>
+                </>
+              )}
+              <Form.Group className="mb-3" controlId="userProvince">
+                <Form.Label>Provincia</Form.Label>
+                <Select
+                  classNamePrefix="react-select"
+                  options={provincesOptions}
+                  value={provincesOptions.find(
+                    (option) => option.value === newUser.province
+                  )}
+                  onChange={(selected) =>
+                    setNewUser((prev) => ({ ...prev, province: selected.value }))
+                  }
+                  placeholder="Selecciona provincia"
+                />
+              </Form.Group>
+              <Form.Group className="mb-3" controlId="userRole">
+                <Form.Label>Rol</Form.Label>
+                <Select
+                  classNamePrefix="react-select"
+                  options={roleOptions}
+                  value={roleOptions.find(
+                    (option) => option.value === newUser.role
+                  )}
+                  onChange={(selected) =>
+                    setNewUser((prev) => ({ ...prev, role: selected.value }))
+                  }
+                  placeholder="Selecciona rol"
+                />
+              </Form.Group>
+              {modalError && (
+                <div className="text-danger mb-3">{modalError}</div>
+              )}
+              <Modal.Footer>
+                <Button
+                  variant="secondary"
+                  onClick={() => setShowModal(false)}
+                  disabled={modalLoading}
+                >
+                  Cancelar
+                </Button>
+                <Button type="submit" variant="primary" disabled={modalLoading}>
+                  {modalLoading
+                    ? "Enviando..."
+                    : editingUser
+                    ? "Actualizar Usuario"
+                    : "Crear Usuario"}
+                </Button>
+              </Modal.Footer>
+            </Form>
+          </Modal.Body>
+        </Modal>
       </div>
     </div>
   );
 };
 
-export default Customers;
+export default UsersList;

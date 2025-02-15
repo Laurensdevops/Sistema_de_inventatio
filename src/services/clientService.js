@@ -9,6 +9,16 @@ export const getClientByEmail = async (email) => {
   }
 };
 
+export const getClientByPhone = async (phone) => {
+  try {
+    return await apiRequest(`clients?where[phone][equals]=${phone}`);
+  } catch (error) {
+    console.error("Error al obtener cliente por teléfono:", error);
+    throw error;
+  }
+};
+
+
 export const createClient = async (clientData) => {
   try {
     return await apiRequest("clients", "POST", clientData);

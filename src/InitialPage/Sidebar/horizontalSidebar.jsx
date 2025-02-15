@@ -68,7 +68,7 @@ const HorizontalSidebar = () => {
             </Link>
             <ul style={{ display: isActive1 ? "block" : "none" }}>
               <li>
-                <Link to="product-list">
+                <Link to="#">
                   <span>Productos</span>
                 </Link>
               </li>

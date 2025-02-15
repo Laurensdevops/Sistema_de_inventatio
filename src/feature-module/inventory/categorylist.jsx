@@ -12,7 +12,7 @@ import {
 } from "feather-icons-react/build/IconComponents";
 import Select from "react-select";
 import { DatePicker } from "antd";
-import AddCategoryList from "../../core/modals/inventory/addcategorylist";
+import AddCategoryList from "../../core/modals/inventory/addcategory";
 import EditCategoryList from "../../core/modals/inventory/editcategorylist";
 import withReactContent from "sweetalert2-react-content";
 import Swal from "sweetalert2";
@@ -142,9 +142,8 @@ const CategoryList = () => {
       dataIndex: "status",
       render: (text) => (
         <span
-          className={`badge ${
-            text === "Active" ? "badge-success" : "badge-secondary"
-          }`}
+          className={`badge ${text === "Active" ? "badge-success" : "badge-secondary"
+            }`}
         >
           <Link to="#">{text}</Link>
         </span>
@@ -232,7 +231,7 @@ const CategoryList = () => {
               to="#"
               className="btn btn-added"
               data-bs-toggle="modal"
-              data-bs-target="#add-category"
+              data-bs-target="#add-units-category"
             >
               <PlusCircle className="me-2" />
               Add New Category
@@ -258,9 +257,8 @@ const CategoryList = () => {
               </div>
               <div className="search-path">
                 <Link
-                  className={`btn btn-filter ${
-                    isFilterVisible ? "setclose" : ""
-                  }`}
+                  className={`btn btn-filter ${isFilterVisible ? "setclose" : ""
+                    }`}
                   id="filter_search"
                   onClick={toggleFilterVisibility}
                 >

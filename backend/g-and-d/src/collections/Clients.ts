@@ -24,7 +24,7 @@ const Clients: CollectionConfig = {
       type: "text",
       required: true,
       label: "Email",
-      index: true, // Agrega este atributo para que el campo sea consultable
+      index: true, // Para poder consultarlo fácilmente
     },
     {
       name: "address",
@@ -32,10 +32,19 @@ const Clients: CollectionConfig = {
       required: true,
       label: "Dirección",
     },
+    {
+      name: "paymentMethod",
+      type: "select",
+      required: true,
+      label: "Método de Pago",
+      options: [
+        { label: "Efectivo", value: "efectivo" },
+        { label: "Tarjeta", value: "tarjeta" },
+      ],
+    },
   ],
-
   access: {
-    read: roleAccess(["admin", "manager", "seller"]),
+    read: roleAccess(["admin", "manager", "seller", "courier"]),
     create: roleAccess(["admin", "manager"]),
     update: roleAccess(["admin", "manager", "seller"]),
     delete: roleAccess(["admin"]),

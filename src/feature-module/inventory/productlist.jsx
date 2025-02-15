@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import ImageWithBasePath from '../../core/img/imagewithbasebath';
 import { PlusCircle, RotateCw } from 'feather-icons-react/build/IconComponents';
 import { Check } from 'react-feather';
@@ -11,13 +11,15 @@ import Swal from 'sweetalert2';
 import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
-// import { useSelector } from "react-redux";
+import { useSelector } from "react-redux";
+import { deleteProduct } from "../../services/productService";
 
 import useProducts from '../../hooks/useProducts';
 import useCategories from '../../hooks/useCategories';
 
 const ProductList = () => {
-  // const user = useSelector((state) => state.user);
+  const navigate = useNavigate();
+  const user = useSelector((state) => state.user);
   // const token = useSelector((state) => state.token);
 
   // useEffect(() => {
@@ -31,6 +33,10 @@ const ProductList = () => {
     // bestSellers, 
     loading: productsLoading,
   } = useProducts();
+
+  const handleEditProduct = (product) => {
+    navigate(all_routes.addproduct, { state: { initialProductData: product } });
+  };
 
   const {
     categories,
@@ -108,6 +114,41 @@ const ProductList = () => {
   };
   const MySwal = withReactContent(Swal);
 
+  // Función para eliminar producto con confirmación
+  const handleDeleteProduct = (product) => {
+    MySwal.fire({
+      title: "¿Estás seguro?",
+      text: "¡No podrás revertir esta acción!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#00ff00",
+      cancelButtonColor: "#ff0000",
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          await deleteProduct(product.id);
+          MySwal.fire({
+            title: "Eliminado!",
+            text: "El producto ha sido eliminado.",
+            icon: "success",
+            confirmButtonText: "OK",
+          });
+          // Recargar la página para actualizar la lista
+          window.location.reload();
+        } catch (error) {
+          MySwal.fire({
+            title: "Error!",
+            text: "No se pudo eliminar el producto.",
+            icon: "error",
+            confirmButtonText: "OK",
+          });
+        }
+      }
+    });
+  };
+
   const showConfirmationAlert = () => {
     MySwal.fire({
       title: 'Are you sure?',
@@ -166,7 +207,7 @@ const ProductList = () => {
                     return (
                       <div key={cat.id} id={cat.id} className='pos-slick-item'>
                         <Link to="#">
-                          <ImageWithBasePath height={64} width={64} src={cat.image.url} alt={cat.image.alt} />
+                          {/* <ImageWithBasePath height={64} width={64} src={cat.image.url} alt={cat.image.alt} /> */}
                         </Link>
                         <h6>
                           <Link to="#">{cat.name}</Link>
@@ -185,45 +226,59 @@ const ProductList = () => {
                   <div className="tabs_container">
                     <div className="tab_content active" data-tab="all">
                       <div className="row">
-                        {products?.docs?.map((product) => {
-                          return (
-                            <div key={product.id} className="col-12 col-sm-6 col-md-4 col-lg-3">
-                              <div className="product-info default-cover card">
-                                <Link to="#" className="img-bg">
-                                  <ImageWithBasePath
-                                    src={product?.image?.url}
-                                    alt={product?.image?.alt}
-                                    height={100}
-                                    width={100}
-                                  />
-                                  <span>
-                                    <Check className="feather-16" />
-                                  </span>
+                      {products?.docs?.map((product) => (
+                          <div key={product.id} className="col-12 col-sm-6 col-md-4 col-lg-3">
+                            <div className="product-info default-cover card">
+                              <Link to="#" className="img-bg">
+                                {/* Si deseas mostrar la imagen, descomenta lo siguiente:
+                                <ImageWithBasePath
+                                  src={product?.image?.url}
+                                  alt={product?.image?.alt}
+                                  height={100}
+                                  width={100}
+                                /> */}
+                                <span>
+                                  <Check className="feather-16" />
+                                </span>
+                              </Link>
+                              <h6 className="cat-name">
+                                <Link to="#">
+                                  {product.categories.map((cat) => (
+                                    <span key={cat.id}>{cat.name} </span>
+                                  ))}
                                 </Link>
-                                <h6 className="cat-name">
-                                  <Link to="#">
-                                    {product.categories.map((cat) => {
-                                      return (
-                                        <span key={cat.id}>{cat.name} </span>
-                                      );
-                                    })}
-                                  </Link>
-                                </h6>
-                                <h6 className="product-name">
-                                  <Link to="#">{product.name}</Link>
-                                </h6>
-                                <div className="d-flex align-items-center justify-content-between price">
-                                  <p><strong>Base:</strong> {product.prices.base}</p>
-                                  <p><strong>Retail:</strong> {product.prices.retail}</p>
-                                  <p><strong>Mayorista:</strong> {product.prices.wholesale}</p>
-                                </div>
-                                <div className="stock-info" style={{ marginTop: '5px' }}>
-                                  <p><strong>Stock:</strong> {product.stock}</p>
-                                </div>
+                              </h6>
+                              <h6 className="product-name">
+                                <Link to="#">{product.name}</Link>
+                              </h6>
+                              <div className="d-flex align-items-center justify-content-between price">
+                                <p><strong>Base:</strong> {product.prices.base}</p>
+                                <p><strong>Retail:</strong> {product.prices.retail}</p>
+                                <p><strong>Mayorista:</strong> {product.prices.wholesale}</p>
                               </div>
+                              <div className="stock-info" style={{ marginTop: "5px" }}>
+                                <p><strong>Stock:</strong> {product.stock}</p>
+                              </div>
+                              {/* Mostrar botones Editar y Eliminar solo si el usuario es admin o manager */}
+                              {(user.role === "admin" || user.role === "manager") && (
+                                <div className="mt-2 d-flex gap-2">
+                                  <button
+                                    className="btn btn-sm btn-warning"
+                                    onClick={() => handleEditProduct(product)}
+                                  >
+                                    Editar
+                                  </button>
+                                  <button
+                                    className="btn btn-sm btn-danger"
+                                    onClick={() => handleDeleteProduct(product)}
+                                  >
+                                    Eliminar
+                                  </button>
+                                </div>
+                              )}
                             </div>
-                          );
-                        })}
+                          </div>
+                        ))}
                         {console.log("productos:", products)}
                       </div>
                     </div>
