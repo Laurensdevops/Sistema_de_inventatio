@@ -42,6 +42,7 @@ const Users: CollectionConfig = {
       options: [
         { label: "Admin", value: "admin" },
         { label: "Gerente", value: "manager" },
+        { label: "Gerente", value: "warehouse" },
         { label: "Vendedor", value: "seller" },
         { label: "Mensajero", value: "courier" },
       ],
@@ -56,10 +57,10 @@ const Users: CollectionConfig = {
     },
   ],
   access: {
-    read: roleAccess(["admin", "manager", "seller", "courier"]),
+    read: roleAccess(["admin", "manager"]),
     create: roleAccess(["admin", "manager"]),
-    update: roleAccess(["admin", "manager", "seller"]),
-    delete: roleAccess(["admin"]),
+    update: roleAccess(["admin", "manager"]),
+    delete:roleAccess(["admin", "manager"]),
   },
 };
 

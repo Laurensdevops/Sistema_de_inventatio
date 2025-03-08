@@ -9,6 +9,7 @@ import EditProduct from "../feature-module/inventory/editproduct";
 import Customers from "../feature-module/people/customers";
 import StockAdjustment from "../feature-module/stock/stockAdjustment";
 import Invoices from "../feature-module/sales/invoices";
+import Invoicedetail from "../feature-module/sales/invoicedetail";
 import InvoiceCreate from "../feature-module/sales/invoicescreate";
 import Managestock from "../feature-module/stock/managestock";
 import CustomerReport from "../feature-module/Reports/customerreport";
@@ -51,7 +52,7 @@ export const publicRoutes = [
     path: routes.productlist,
     name: "productsList",
     element: <ProductList />,
-    allowedRoles: ['admin', 'courier'],
+    allowedRoles: ['admin'],
     // allowedRoles: ['admin', 'manager', 'seller', 'courier'],
     route: Route,
   },
@@ -61,7 +62,7 @@ export const publicRoutes = [
     name: "productAdd",
     element: <AddProduct />,
     route: Route,
-    allowedRoles: ['admin', 'manager', 'seller'],
+    allowedRoles: ['admin'],
   },
   {
     id: 3,
@@ -143,7 +144,7 @@ export const publicRoutes = [
     name: "inventoryreport",
     element: <InventoryReport />,
     route: Route,
-    allowedRoles: ['admin'],
+    allowedRoles: ['admin', 'manager'],
 
   },
   {
@@ -152,7 +153,7 @@ export const publicRoutes = [
     name: "invoicecreate",
     element: <InvoiceCreate />,
     route: Route,
-    allowedRoles: ['admin'],
+    allowedRoles: ['admin', 'manager', 'seller'],
 
   },
   {
@@ -161,7 +162,7 @@ export const publicRoutes = [
     name: "invoices",
     element: <Invoices />,
     route: Route,
-    allowedRoles: ['admin', 'courier'],
+    allowedRoles: ['admin', 'courier', 'seller'],
   },
   {
     id: 93,
@@ -169,7 +170,7 @@ export const publicRoutes = [
     name: "invoicereport",
     element: <Invoicereport />,
     route: Route,
-    allowedRoles: ['admin'],
+    allowedRoles: ['admin', 'courier'],
 
   },
   {
@@ -178,7 +179,7 @@ export const publicRoutes = [
     name: "customerreport",
     element: <CustomerReport />,
     route: Route,
-    allowedRoles: ['admin'],
+    allowedRoles: ['admin', 'manager', 'seller', 'courier'],
 
   },
   {
@@ -187,7 +188,7 @@ export const publicRoutes = [
     name: "generalsettings",
     element: <GeneralSettings />,
     route: Route,
-    allowedRoles: ['admin'],
+    allowedRoles: ['admin', 'manager', 'seller', 'courier'],
 
   },
   {
@@ -197,6 +198,15 @@ export const publicRoutes = [
     element: <Preference />,
     route: Route,
     allowedRoles: ['admin'],
+
+  },
+  {
+    id: 200,
+    path: routes.invoiceview,
+    name: "invoiceview",
+    element: <Invoicedetail />,
+    route: Route,
+    allowedRoles: ['admin', 'manager', 'seller', 'courier'],
 
   },
   {
@@ -279,6 +289,7 @@ export const publicRoutes = [
     path: "*",
     name: "NotFound",
     element: <Navigate to="/" />,
+    allowedRoles: ['admin', 'manager', 'seller', 'courier'],
     route: Route,
   },
   {

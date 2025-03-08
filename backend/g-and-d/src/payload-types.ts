@@ -73,7 +73,7 @@ export interface UserAuthOperations {
  */
 export interface User {
   id: string;
-  role: 'admin' | 'manager' | 'seller' | 'courier';
+  role: 'admin' | 'manager' | 'warehouse' | 'seller' | 'courier';
   province:
     | 'Distrito Nacional'
     | 'Santo Domingo Este'
@@ -202,8 +202,16 @@ export interface Invoice {
   invoiceDate: string;
   creationDate: string;
   createdBy: string | User;
-  status: 'pendiente' | 'en_empaquetado' | 'enviada' | 'confirmada' | 'completada' | 'cancelada';
+  status:
+    | 'pendiente'
+    | 'en_empaquetado'
+    | 'enviada'
+    | 'confirmada'
+    | 'completada'
+    | 'cancelada'
+    | 'cancelada_entregado';
   items: {
+    productId: string | Product;
     productName: string;
     quantity: number;
     price: number;
@@ -217,6 +225,8 @@ export interface Invoice {
   tariff: number;
   assignedCourier?: (string | null) | User;
   stockDeducted?: boolean | null;
+  commissionPaidToCourier?: boolean | null;
+  commissionPaidToSeller?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -404,6 +414,7 @@ export interface InvoicesSelect<T extends boolean = true> {
   items?:
     | T
     | {
+        productId?: T;
         productName?: T;
         quantity?: T;
         price?: T;
@@ -417,6 +428,8 @@ export interface InvoicesSelect<T extends boolean = true> {
   tariff?: T;
   assignedCourier?: T;
   stockDeducted?: T;
+  commissionPaidToCourier?: T;
+  commissionPaidToSeller?: T;
   updatedAt?: T;
   createdAt?: T;
 }

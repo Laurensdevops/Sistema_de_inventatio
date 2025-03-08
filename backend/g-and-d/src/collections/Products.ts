@@ -89,9 +89,9 @@ const Products: CollectionConfig = {
     ],
   },
   access: {
-    read: roleAccess(["admin", "manager", "seller", "courier"]),
+    read: roleAccess(["admin", "manager", "seller", "courier", "warehouse"]),
     create: roleAccess(["admin", "manager"]),
-    update: roleAccess(["admin", "manager", "seller"]),
+    update: roleAccess(["admin", "manager", "seller", "courier", "warehouse"]),
     delete: roleAccess(["admin"]),
   },
 };

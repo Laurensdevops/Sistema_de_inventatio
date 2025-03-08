@@ -60,7 +60,8 @@ const Invoices: CollectionConfig = {
         { label: "Enviada", value: "enviada" },
         { label: "Confirmada", value: "confirmada" },
         { label: "Pagada", value: "completada" },
-        { label: "Cancelada", value: "cancelada" },
+        { label: "Canceladas y no entregado", value: "cancelada" },
+        { label: "Canceladas y entragado", value: "cancelada_entregado" },
       ],
       defaultValue: "pendiente",
     },
@@ -71,6 +72,13 @@ const Invoices: CollectionConfig = {
       minRows: 1,
       required: true,
       fields: [
+        {
+          name: "productId",
+          type: "relationship", 
+          relationTo: "products",
+          required: true,
+          label: "ID del Producto",
+        },
         {
           name: "productName",
           type: "text",
@@ -147,6 +155,24 @@ const Invoices: CollectionConfig = {
         position: "sidebar",
       },
     },
+    {
+      name: "commissionPaidToCourier",
+      type: "checkbox",
+      label: "Comisión pagada al mensajero",
+      defaultValue: false,
+      admin: {
+        position: "sidebar",
+      },
+    },
+    {
+      name: "commissionPaidToSeller",
+      type: "checkbox",
+      label: "Comisión pagada al vendedor",
+      defaultValue: false,
+      admin: {
+        position: "sidebar",
+      },
+    },
   ],
   hooks: {
     beforeChange: [
@@ -154,26 +180,33 @@ const Invoices: CollectionConfig = {
         if (!data.createdBy && req.user) {
           data.createdBy = req.user.id;
         }
-
+  
         if (originalDoc && originalDoc.status === "pendiente" && data.status) {
           if (!["pendiente", "confirmada", "cancelada"].includes(data.status)) {
             throw new Error(
-              "Solo se puede cambiar el estado de una factura pendiente a 'confirmada' o 'cancelada'."
+              "Solo se puede cambiar el estado de una factura pendiente a 'completada' o 'cancelada'."
             );
           }
         }
-
         if (
           originalDoc &&
-          originalDoc.status === "en_empaquetado" &&
-          data.status === "confirmada" &&
+          data.status === "completada" &&
+          originalDoc.status !== "completada" &&
           !originalDoc.stockDeducted
         ) {
+          console.log("Factura confirmada, iniciando descuento de stock...");
           for (const item of originalDoc.items) {
+            if (!item.productId) {
+              console.warn("El producto no tiene productId, no se puede descontar stock:", item);
+              continue;
+            }
+            console.log(`Descontando stock para ${item.productName}: cantidad ${item.quantity}`);
             try {
-              await updateProductStock(item.productId, -Number(item.quantity));
+              await updateProductStock(req, item.productId, -Number(item.quantity));
             } catch (err: any) {
-              throw new Error(`Error al descontar stock del producto ${item.productName}: ${err.message}`);
+              throw new Error(
+                `Error al descontar stock del producto ${item.productName}: ${err.message}`
+              );
             }
           }
           data.stockDeducted = true;
@@ -185,16 +218,25 @@ const Invoices: CollectionConfig = {
           originalDoc.status !== "cancelada" &&
           originalDoc.stockDeducted
         ) {
+          console.log("Factura cancelada, devolviendo stock...");
           for (const item of originalDoc.items) {
+            if (!item.productId) {
+              console.warn("El producto no tiene productId, no se puede devolver stock:", item);
+              continue;
+            }
+            console.log(`Devolviendo stock para ${item.productName}: cantidad ${item.quantity}`);
             try {
-              await updateProductStock(item.productId, Number(item.quantity));
+              await updateProductStock(req, item.productId, Number(item.quantity));
             } catch (err: any) {
-              throw new Error(`Error al devolver stock del producto ${item.productName}: ${err.message}`);
+              throw new Error(
+                `Error al devolver stock del producto ${item.productName}: ${err.message}`
+              );
             }
           }
           data.stockDeducted = false;
         }
-
+  
+        // Calcular el total de la factura
         if (data.items && Array.isArray(data.items)) {
           data.total = data.items.reduce((sum, item) => {
             const qty = Number(item.quantity) || 0;
@@ -202,15 +244,15 @@ const Invoices: CollectionConfig = {
             return sum + qty * price;
           }, 0);
         }
-
+  
         return data;
       },
     ],
   },
   access: {
-    read: roleAccess(["admin", "manager", "seller", "courier"]),
+    read: roleAccess(["admin", "manager", "seller", "courier", "warehouse"]),
     create: roleAccess(["admin", "manager", "seller"]),
-    update: roleAccess(["admin", "manager", "seller"]),
+    update: roleAccess(["admin", "manager", "seller", "courier", "warehouse"]),
     delete: roleAccess(["admin"]),
   },
 };

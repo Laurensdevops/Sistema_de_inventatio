@@ -293,6 +293,7 @@ const InvoiceCreate = ({ initialInvoiceData = null }) => {
         invoiceDate: new Date().toISOString(),
         status: isEditing ? editingData.status : "pendiente",
         items: invoiceItems.map((item) => ({
+          productId: item.productId,
           productName: item.productName,
           quantity: item.quantity,
           price: getPriceValue(item)

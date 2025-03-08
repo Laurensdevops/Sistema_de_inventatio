@@ -13,13 +13,15 @@ const Invoices = () => {
   const navigate = useNavigate();
 
   const [selectedTab, setSelectedTab] = useState("pendiente");
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 3;
+
   const { invoices, loading, error } = useInvoices();
 
   const [editingInvoice, setEditingInvoice] = useState(null);
   const [couriers, setCouriers] = useState([]);
   const [courierSearch, setCourierSearch] = useState("");
   const [selectedCourier, setSelectedCourier] = useState("");
-
   const [cancelInvoice, setCancelInvoice] = useState(null);
   const [cancelNote, setCancelNote] = useState("");
 
@@ -27,7 +29,8 @@ const Invoices = () => {
     { key: "pendiente", label: "Pendientes" },
     { key: "completada", label: "Pagadas" },
     { key: "en_empaquetado", label: "Empaquetado" },
-    { key: "cancelada", label: "Canceladas" },
+    { key: "cancelada", label: "Canceladas y no entregado" },
+    { key: "cancelada_entregado", label: "Canceladas y entregado" },
     { key: "confirmada", label: "Confirmadas" },
     { key: "sinPagar", label: "Sin pagar" }
   ];
@@ -35,14 +38,45 @@ const Invoices = () => {
   const getId = (objOrId) =>
     typeof objOrId === "object" && objOrId !== null ? objOrId.id : objOrId;
 
-  const filteredInvoices =
-    currentUser.role === "courier"
-      ? invoices.filter(
-          (invoice) =>
-            invoice.assignedCourier &&
-            getId(invoice.assignedCourier) === currentUser.id
-        )
-      : invoices.filter((invoice) => invoice.status === selectedTab);
+  const invoiceDocs = Array.isArray(invoices)
+    ? invoices
+    : (invoices && invoices.docs) || [];
+
+  let visibleDocs = invoiceDocs;
+  let visibleTabs = tabs;
+
+  if (currentUser.role === "seller") {
+    visibleDocs = invoiceDocs.filter(
+      (invoice) =>
+        invoice.createdBy && getId(invoice.createdBy) === currentUser.id
+    );
+    visibleTabs = tabs.filter(tab =>
+      ["pendiente", "confirmada", "cancelada", "cancelada_entregado"].includes(tab.key)
+    );
+  } else if (currentUser.role === "courier") {
+    visibleDocs = invoiceDocs.filter(
+      (invoice) =>
+        invoice.assignedCourier &&
+        getId(invoice.assignedCourier) === currentUser.id
+    );
+    visibleTabs = tabs.filter(tab =>
+      ["en_empaquetado", "completada", "cancelada", "cancelada_entregado"].includes(tab.key)
+    );
+  }
+
+  const filteredDocs = visibleDocs.filter((invoice) =>
+    invoice.status.toLowerCase() === selectedTab.toLowerCase()
+  );
+
+  console.log("Total invoices:", invoiceDocs.length);
+  console.log("Visible invoices (por rol):", visibleDocs.length);
+  console.log("Filtered invoices (por estado):", filteredDocs.length);
+
+  const totalPages = Math.ceil(filteredDocs.length / pageSize);
+  const paginatedInvoices = filteredDocs.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
 
   const changeInvoiceStatus = async (invoiceId, newStatus, extraData = {}) => {
     try {
@@ -114,7 +148,6 @@ const Invoices = () => {
   return (
     <div className="page-wrapper">
       <div className="content">
-        {/* Encabezado */}
         <div className="page-header">
           <div className="add-item d-flex">
             <div className="page-title">
@@ -161,35 +194,35 @@ const Invoices = () => {
           </ul>
         </div>
 
-        {/* Mostrar pestañas solo si el usuario NO es mensajero */}
-        {currentUser.role !== "courier" && (
-          <nav className="nav nav-style-1 nav-pills mb-3" role="tablist">
-            {tabs.map((tab) => (
-              <Link
-                key={tab.key}
-                className={`nav-link ${selectedTab === tab.key ? "active" : ""}`}
-                to="#"
-                onClick={() => setSelectedTab(tab.key)}
-              >
-                {tab.label}{" "}
-                <span className="badge bg-secondary ms-1 rounded-pill">
-                  {invoices.filter((inv) => inv.status === tab.key).length}
-                </span>
-              </Link>
-            ))}
-          </nav>
-        )}
+        <nav className="nav nav-style-1 nav-pills mb-3" role="tablist">
+          {visibleTabs.map((tab) => (
+            <Link
+              key={tab.key}
+              className={`nav-link ${selectedTab === tab.key ? "active" : ""}`}
+              to="#"
+              onClick={() => {
+                setSelectedTab(tab.key);
+                setCurrentPage(1);
+              }}
+            >
+              {tab.label}{" "}
+              <span className="badge bg-secondary ms-1 rounded-pill">
+                {visibleDocs.filter((inv) => inv.status.toLowerCase() === tab.key.toLowerCase()).length}
+              </span>
+            </Link>
+          ))}
+        </nav>
 
-        {/* Listado de facturas */}
+
         <div className="tab-content">
           {loading ? (
             <p>Cargando facturas...</p>
           ) : error ? (
             <p>Error al cargar facturas.</p>
-          ) : filteredInvoices.length === 0 ? (
+          ) : filteredDocs.length === 0 ? (
             <p>No se encontraron facturas para el estado &ldquo;{selectedTab}&rdquo;.</p>
           ) : (
-            filteredInvoices.map((invoice) => (
+            paginatedInvoices.map((invoice) => (
               <div key={invoice.id} className="default-cover p-4 mb-3">
                 <span className="badge bg-secondary d-inline-block mb-4">
                   Order ID : #{invoice.invoiceNumber}
@@ -254,91 +287,83 @@ const Invoices = () => {
                   </div>
                 </div>
                 <div className="btn-row d-flex align-items-center justify-content-between">
-                  <Link to={`${all_routes.invoiceview}/${invoice.id}`} className="btn btn-info btn-icon flex-fill">
+                  <Link
+                    to={all_routes.invoiceview} 
+                    state={{ initialInvoiceData: invoice }}
+                    className="btn btn-info btn-icon flex-fill"
+                  >
                     Ver detalles
                   </Link>
 
-                  {invoice.status === "canceladas" || invoice.status === "pagas" ? null : (
+
+                  {/* Bloque de botones según estado */}
+                  {invoice.status === "pendiente" && (
                     <>
-                      {invoice.status === "pendiente" && (
-                        <>
-                          <button
-                            onClick={() => handleEditInvoice(invoice)}
-                            className="btn btn-primary btn-icon flex-fill"
-                          >
-                            Editar Factura
-                          </button>
-                          <button
-                            onClick={() => changeInvoiceStatus(invoice.id, "confirmada")}
-                            className="btn btn-success btn-icon flex-fill"
-                          >
-                            Confirmar
-                          </button>
-                          <button
-                            onClick={() => openCancelModal(invoice)}
-                            className="btn btn-danger btn-icon flex-fill"
-                          >
-                            Cancelar
-                          </button>
-                        </>
-                      )}
+                      <button onClick={() => handleEditInvoice(invoice)} className="btn btn-primary btn-icon flex-fill">
+                        Editar Factura
+                      </button>
+                      <button onClick={() => changeInvoiceStatus(invoice.id, "confirmada")} className="btn btn-success btn-icon flex-fill">
+                        Confirmar
+                      </button>
+                      <button onClick={() => openCancelModal(invoice)} className="btn btn-danger btn-icon flex-fill">
+                        Cancelar
+                      </button>
+                    </>
+                  )}
 
-                      {invoice.status === "confirmada" && (
-                        <>
-                          <button
-                            onClick={() => handleEditInvoice(invoice)}
-                            className="btn btn-primary btn-icon flex-fill"
-                          >
-                            Editar Factura
-                          </button>
-                          <button
-                            onClick={() => changeInvoiceStatus(invoice.id, "en_empaquetado")}
-                            className="btn btn-success btn-icon flex-fill"
-                          >
-                            Confirmar Enpaquetado
-                          </button>
-                          <button
-                            onClick={() => openCancelModal(invoice)}
-                            className="btn btn-danger btn-icon flex-fill"
-                          >
-                            Cancelar
-                          </button>
-                        </>
-                      )}
+                  {invoice.status === "confirmada" && (
+                    <>
+                      <button onClick={() => handleEditInvoice(invoice)} className="btn btn-primary btn-icon flex-fill">
+                        Editar Factura
+                      </button>
+                      <button onClick={() => changeInvoiceStatus(invoice.id, "en_empaquetado")} className="btn btn-success btn-icon flex-fill">
+                        Confirmar Enpaquetado
+                      </button>
+                      <button onClick={() => openCancelModal(invoice)} className="btn btn-danger btn-icon flex-fill">
+                        Cancelar
+                      </button>
+                    </>
+                  )}
 
-                      {invoice.status === "en_empaquetado" && (
-                        <>
-                          <button
-                            onClick={() => handleEditInvoice(invoice)}
-                            className="btn btn-primary btn-icon flex-fill"
-                          >
-                            Editar Factura
+                  {invoice.status === "en_empaquetado" && (
+                    <>
+                      <button onClick={() => handleEditInvoice(invoice)} className="btn btn-primary btn-icon flex-fill">
+                        Editar Factura
+                      </button>
+                      {!invoice.assignedCourier && (
+                        <button onClick={() => openEditModal(invoice)} className="btn btn-success btn-icon flex-fill">
+                          Asignar Mensajero
+                        </button>
+                      )}
+                      {invoice.assignedCourier &&
+                        currentUser &&
+                        getId(invoice.assignedCourier) === currentUser.id && (
+                          <button onClick={() => changeInvoiceStatus(invoice.id, "completada")} className="btn btn-success btn-icon flex-fill">
+                            Completar
                           </button>
-                          {!invoice.assignedCourier && (
-                            <button
-                              onClick={() => openEditModal(invoice)}
-                              className="btn btn-success btn-icon flex-fill"
-                            >
-                              Asignar Mensajero
-                            </button>
-                          )}
-                          {invoice.assignedCourier &&
-                            currentUser &&
-                            getId(invoice.assignedCourier) === currentUser.id && (
-                              <button
-                                onClick={() => changeInvoiceStatus(invoice.id, "completada")}
-                                className="btn btn-success btn-icon flex-fill"
-                              >
-                                Completar
-                              </button>
-                          )}
-                          <button
-                            onClick={() => openCancelModal(invoice)}
-                            className="btn btn-danger btn-icon flex-fill"
-                          >
-                            Cancelar
-                          </button>
-                        </>
+                        )}
+                      <button onClick={() => openCancelModal(invoice)} className="btn btn-danger btn-icon flex-fill">
+                        Cancelar
+                      </button>
+                    </>
+                  )}
+
+                  {invoice.status === "cancelada" && (["admin", "manager", "warehouse"].includes(currentUser.role)) && (
+                    <button onClick={() => changeInvoiceStatus(invoice.id, "cancelada_entregado")} className="btn btn-warning btn-icon flex-fill">
+                      Marcar como entregado
+                    </button>
+                  )}
+
+                  {invoice.status === "completada" && (
+                    <>
+                      {invoice.assignedCourier && getId(invoice.assignedCourier) === currentUser.id ? (
+                        <button onClick={() => changeInvoiceStatus(invoice.id, "confirmada")} className="btn btn-success btn-icon flex-fill">
+                          Revertir Pagada
+                        </button>
+                      ) : (["admin", "manager"].includes(currentUser.role)) && (
+                        <button onClick={() => changeInvoiceStatus(invoice.id, "confirmada")} className="btn btn-success btn-icon flex-fill">
+                          Cambiar de Pagada
+                        </button>
                       )}
                     </>
                   )}
@@ -347,6 +372,31 @@ const Invoices = () => {
             ))
           )}
         </div>
+
+        {/* Controles de paginación */}
+        {filteredDocs.length > pageSize && (
+          <div className="pagination-controls d-flex justify-content-center align-items-center mb-3">
+            <Button
+              variant="secondary"
+              className="me-2"
+              disabled={currentPage <= 1}
+              onClick={() => setCurrentPage(currentPage - 1)}
+            >
+              Anterior
+            </Button>
+            <span>
+              Página {currentPage} de {totalPages}
+            </span>
+            <Button
+              variant="secondary"
+              className="ms-2"
+              disabled={currentPage >= totalPages}
+              onClick={() => setCurrentPage(currentPage + 1)}
+            >
+              Siguiente
+            </Button>
+          </div>
+        )}
 
         {/* Modal para asignar mensajero */}
         <Modal show={editingInvoice !== null} onHide={() => setEditingInvoice(null)}>

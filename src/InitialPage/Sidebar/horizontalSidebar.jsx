@@ -6,6 +6,7 @@ const HorizontalSidebar = () => {
   const [isActive2, setIsActive2] = useState(false);
   const [isActive3, setIsActive3] = useState(false);
   const [isActive4, setIsActive4] = useState(false);
+  const [isActive5, setIsActive5] = useState(false);
 
   const [subActive1, setsubActive1] = useState(false);
   const [subActive2, setsubActive2] = useState(false);
@@ -33,24 +34,29 @@ const HorizontalSidebar = () => {
     setIsActive2(false);
     setIsActive3(false);
     setIsActive4(false);
+    setIsActive5(false);
   };
   const handleSelectClick2 = () => {
     setIsActive1(false);
     setIsActive2(!isActive2);
     setIsActive3(false);
     setIsActive4(false);
+    setIsActive5(false);
   };
   const handleSelectClick3 = () => {
     setIsActive1(false);
     setIsActive2(false);
     setIsActive3(!isActive3);
     setIsActive4(false);
+    setIsActive5(false);
   };
-  const handleSelectClick4 = () => {
+
+  const handleSelectClick5 = () => {
     setIsActive1(false);
     setIsActive2(false);
     setIsActive3(false);
-    setIsActive4(!isActive4);
+    setIsActive4(false);
+    setIsActive5(!isActive5);
   };
 
   return (
@@ -200,7 +206,7 @@ const HorizontalSidebar = () => {
                 >
                   <span>Roles &amp; Permisos</span>
                 </Link>
-                <ul style={{ display: subActive5 ? "block" : "none" }}>
+                <ul style={{ display: isActive4 ? "block" : "none" }}>
                   {/* porner esto dentro de las cuentas */}
                   {/* <li>
                     <Link to="delete-account">
@@ -214,13 +220,20 @@ const HorizontalSidebar = () => {
           <li className="submenu">
             <Link
               to="#"
-              onClick={handleSelectClick4}
-              className={isActive4 ? "subdrop" : ""}
+              onClick={handleSelectClick5}
+              className={isActive5 ? "subdrop" : ""}
             >
               <img src="assets/img/icons/printer.svg" alt="img" />
               <span>Reportes</span> <span className="menu-arrow" />
             </Link>
-          
+            <ul style={{ display: isActive5 ? "block" : "none" }}>
+                  {/* porner esto dentro de las cuentas */}
+                  <li>
+                    <Link to="/users-report">
+                      <span>Reporte de ventas</span>
+                    </Link>
+                  </li>
+              </ul>
           </li>
         </ul>
       </div>
