@@ -5,6 +5,14 @@ import { login as apiLogin, logout as apiLogout } from "../services/authService"
 import { useNavigate } from "react-router-dom";
 
 const useAuth = () => {
+  const routerRedirect = {
+    admin: "/product-list",
+    courier: "/invoices",
+    seller: "/invoices",
+    warehouse: "/invoices",
+    manager: "/product-list",
+  };
+
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const user = useSelector((state) => state.user);
@@ -14,7 +22,8 @@ const useAuth = () => {
     try {
       const userData = await apiLogin(email, password);
       dispatch(loginUser(userData.user, userData.token));
-      navigate("/product-list");
+      
+      navigate(routerRedirect[userData.user?.role] || userData.user?.role);
     } catch (err) {
       setError("Credenciales incorrectas. Inténtelo nuevamente.");
     }

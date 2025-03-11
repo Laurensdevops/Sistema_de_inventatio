@@ -26,3 +26,13 @@ export const getInvoices = async () => {
     throw error;
   }
 };
+
+export const getInvoiceById = async (invoiceId) => {
+  try {
+    return await apiRequest(`invoices/${invoiceId}`, "GET");
+  } catch (error) {
+    console.error("Error fetching invoice by ID:", error);
+    throw error;
+  }
+};
+

@@ -1,12 +1,15 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { OverlayTrigger, Tooltip, Modal, Button, Form } from "react-bootstrap";
-import ImageWithBasePath from "../../core/img/imagewithbasebath";
-import { PlusCircle, RotateCcw } from "feather-icons-react/build/IconComponents";
+import { PlusCircle } from "feather-icons-react/build/IconComponents";
 import { all_routes } from "../../Router/all_routes";
 import useInvoices from "../../hooks/useInvoices";
 import { updateInvoice } from "../../services/invoiceService";
 import { getCouriersByProvince } from "../../services/usersService";
+
+// Componentes para generar PDF
+import InvoicePDFGenerator from "../components/GeneratedImagePdf"; // PDF a partir de imagen
+import RealPDFGenerator from "../components/GeneratedPdf"; // PDF real con texto
 
 const Invoices = () => {
   const currentUser = JSON.parse(localStorage.getItem("user"));
@@ -51,7 +54,7 @@ const Invoices = () => {
         invoice.createdBy && getId(invoice.createdBy) === currentUser.id
     );
     visibleTabs = tabs.filter(tab =>
-      ["pendiente", "confirmada", "cancelada", "cancelada_entregado"].includes(tab.key)
+      ["pendiente", "cancelada", "cancelada_entregado"].includes(tab.key)
     );
   } else if (currentUser.role === "courier") {
     visibleDocs = invoiceDocs.filter(
@@ -62,15 +65,24 @@ const Invoices = () => {
     visibleTabs = tabs.filter(tab =>
       ["en_empaquetado", "completada", "cancelada", "cancelada_entregado"].includes(tab.key)
     );
+  } else if (currentUser.role === "warehouse") {
+    visibleDocs = invoiceDocs.filter((invoice) => {
+      if (invoice.status.toLowerCase() === "confirmada") {
+        return true;
+      }
+      if (invoice.status.toLowerCase() === "en_empaquetado") {
+        return true;
+      }
+      return invoice.assignedCourier && getId(invoice.assignedCourier) === currentUser.id;
+    });
+    visibleTabs = tabs.filter(tab =>
+      ["en_empaquetado", "cancelada", "cancelada_entregado", "confirmada"].includes(tab.key)
+    );
   }
 
   const filteredDocs = visibleDocs.filter((invoice) =>
     invoice.status.toLowerCase() === selectedTab.toLowerCase()
   );
-
-  console.log("Total invoices:", invoiceDocs.length);
-  console.log("Visible invoices (por rol):", visibleDocs.length);
-  console.log("Filtered invoices (por estado):", filteredDocs.length);
 
   const totalPages = Math.ceil(filteredDocs.length / pageSize);
   const paginatedInvoices = filteredDocs.slice(
@@ -139,15 +151,12 @@ const Invoices = () => {
       courier.province === editingInvoice?.province
   );
 
-  const renderTooltip = (props) => <Tooltip id="pdf-tooltip" {...props}>Pdf</Tooltip>;
-  const renderExcelTooltip = (props) => <Tooltip id="excel-tooltip" {...props}>Excel</Tooltip>;
-  const renderPrinterTooltip = (props) => <Tooltip id="printer-tooltip" {...props}>Imprimir</Tooltip>;
-  const renderRefreshTooltip = (props) => <Tooltip id="refresh-tooltip" {...props}>Refrescar</Tooltip>;
   const renderCreateInvoiceTooltip = (props) => <Tooltip id="create-invoice-tooltip" {...props}>Crear factura</Tooltip>;
 
   return (
     <div className="page-wrapper">
       <div className="content">
+        {/* Encabezado */}
         <div className="page-header">
           <div className="add-item d-flex">
             <div className="page-title">
@@ -156,34 +165,6 @@ const Invoices = () => {
             </div>
           </div>
           <ul className="table-top-head">
-            <li>
-              <OverlayTrigger placement="top" overlay={renderTooltip}>
-                <Link>
-                  <ImageWithBasePath src="assets/img/icons/pdf.svg" alt="pdf icon" />
-                </Link>
-              </OverlayTrigger>
-            </li>
-            <li>
-              <OverlayTrigger placement="top" overlay={renderExcelTooltip}>
-                <Link>
-                  <ImageWithBasePath src="assets/img/icons/excel.svg" alt="excel icon" />
-                </Link>
-              </OverlayTrigger>
-            </li>
-            <li>
-              <OverlayTrigger placement="top" overlay={renderPrinterTooltip}>
-                <Link>
-                  <i data-feather="printer" className="feather-printer" />
-                </Link>
-              </OverlayTrigger>
-            </li>
-            <li>
-              <OverlayTrigger placement="top" overlay={renderRefreshTooltip}>
-                <Link>
-                  <RotateCcw />
-                </Link>
-              </OverlayTrigger>
-            </li>
             <li>
               <OverlayTrigger placement="top" overlay={renderCreateInvoiceTooltip}>
                 <Link to={all_routes.invoicecreate}>
@@ -213,7 +194,6 @@ const Invoices = () => {
           ))}
         </nav>
 
-
         <div className="tab-content">
           {loading ? (
             <p>Cargando facturas...</p>
@@ -223,7 +203,8 @@ const Invoices = () => {
             <p>No se encontraron facturas para el estado &ldquo;{selectedTab}&rdquo;.</p>
           ) : (
             paginatedInvoices.map((invoice) => (
-              <div key={invoice.id} className="default-cover p-4 mb-3">
+              // Tarjeta de factura con id para posibles capturas
+              <div key={invoice.id} id={`invoice-card-${invoice.id}`} className="default-cover p-4 mb-3" style={{ position: "relative" }}>
                 <span className="badge bg-secondary d-inline-block mb-4">
                   Order ID : #{invoice.invoiceNumber}
                 </span>
@@ -286,17 +267,30 @@ const Invoices = () => {
                     </table>
                   </div>
                 </div>
-                <div className="btn-row d-flex align-items-center justify-content-between">
+
+                {/* Contenedor para los botones de PDF en la esquina superior derecha */}
+                <div style={{
+                  position: "absolute",
+                  top: "10px",
+                  right: "10px",
+                  display: "flex",
+                  gap: "5px"
+                }}>
+                  {/* Botón PDF por imagen */}
+                  <InvoicePDFGenerator invoiceId={invoice.id} />
+                  {/* Botón PDF real (texto selectable) */}
+                  <RealPDFGenerator invoice={invoice} />
+                </div>
+
+                <div className="btn-row d-flex align-items-center justify-content-between mt-3">
                   <Link
-                    to={all_routes.invoiceview} 
+                    to={all_routes.invoiceview}
                     state={{ initialInvoiceData: invoice }}
                     className="btn btn-info btn-icon flex-fill"
                   >
                     Ver detalles
                   </Link>
-
-
-                  {/* Bloque de botones según estado */}
+                  {/* Resto de botones según estado */}
                   {invoice.status === "pendiente" && (
                     <>
                       <button onClick={() => handleEditInvoice(invoice)} className="btn btn-primary btn-icon flex-fill">
@@ -310,7 +304,6 @@ const Invoices = () => {
                       </button>
                     </>
                   )}
-
                   {invoice.status === "confirmada" && (
                     <>
                       <button onClick={() => handleEditInvoice(invoice)} className="btn btn-primary btn-icon flex-fill">
@@ -324,12 +317,13 @@ const Invoices = () => {
                       </button>
                     </>
                   )}
-
                   {invoice.status === "en_empaquetado" && (
                     <>
-                      <button onClick={() => handleEditInvoice(invoice)} className="btn btn-primary btn-icon flex-fill">
-                        Editar Factura
-                      </button>
+                      {(currentUser.role === "admin" || currentUser.role === "seller" || currentUser.role === "warehouse" || currentUser.role === "manager") && (
+                        <button onClick={() => handleEditInvoice(invoice)} className="btn btn-primary btn-icon flex-fill">
+                          Editar Factura
+                        </button>
+                      )}
                       {!invoice.assignedCourier && (
                         <button onClick={() => openEditModal(invoice)} className="btn btn-success btn-icon flex-fill">
                           Asignar Mensajero
@@ -342,18 +336,21 @@ const Invoices = () => {
                             Completar
                           </button>
                         )}
+                      {currentUser.role === "admin" && (
+                        <button onClick={() => changeInvoiceStatus(invoice.id, "completada")} className="btn btn-success btn-icon flex-fill">
+                          Completar
+                        </button>
+                      )}
                       <button onClick={() => openCancelModal(invoice)} className="btn btn-danger btn-icon flex-fill">
                         Cancelar
                       </button>
                     </>
                   )}
-
                   {invoice.status === "cancelada" && (["admin", "manager", "warehouse"].includes(currentUser.role)) && (
                     <button onClick={() => changeInvoiceStatus(invoice.id, "cancelada_entregado")} className="btn btn-warning btn-icon flex-fill">
                       Marcar como entregado
                     </button>
                   )}
-
                   {invoice.status === "completada" && (
                     <>
                       {invoice.assignedCourier && getId(invoice.assignedCourier) === currentUser.id ? (
@@ -373,7 +370,6 @@ const Invoices = () => {
           )}
         </div>
 
-        {/* Controles de paginación */}
         {filteredDocs.length > pageSize && (
           <div className="pagination-controls d-flex justify-content-center align-items-center mb-3">
             <Button
@@ -398,7 +394,7 @@ const Invoices = () => {
           </div>
         )}
 
-        {/* Modal para asignar mensajero */}
+        {/* Modales para asignar mensajero y cancelar factura */}
         <Modal show={editingInvoice !== null} onHide={() => setEditingInvoice(null)}>
           <Modal.Header closeButton>
             <Modal.Title>Asignar Mensajero</Modal.Title>
@@ -446,7 +442,6 @@ const Invoices = () => {
           </Modal.Footer>
         </Modal>
 
-        {/* Modal para cancelar factura */}
         <Modal show={cancelInvoice !== null} onHide={() => setCancelInvoice(null)}>
           <Modal.Header closeButton>
             <Modal.Title>Cancelar Factura</Modal.Title>

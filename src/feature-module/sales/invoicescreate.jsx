@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from "react";
 import PropTypes from "prop-types";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { OverlayTrigger, Tooltip, Modal, Button} from "react-bootstrap";
 import { PlusCircle, RotateCcw } from "feather-icons-react/build/IconComponents";
+import { all_routes } from "../../Router/all_routes";
 import ImageWithBasePath from "../../core/img/imagewithbasebath";
 import useProducts from "../../hooks/useProducts";
 import useCategories from "../../hooks/useCategories";
@@ -65,6 +66,7 @@ const getAppliedPrice = (prices, quantity) => {
 };
 
 const InvoiceCreate = ({ initialInvoiceData = null }) => {
+  const navigate = useNavigate();
   const location = useLocation();
   const editingData = location.state?.initialInvoiceData || initialInvoiceData;
   const isEditing = editingData !== null;
@@ -281,7 +283,7 @@ const InvoiceCreate = ({ initialInvoiceData = null }) => {
       const client = await getOrCreateClient();
       const generateInvoiceNumber = () => `F-${new Date().getTime()}`;
       const getPriceValue = (item) => {
-        if (!item.prices) return 0;
+        if (!item.prices) return item.price || 0;
         if (item.appliedPrice === "Precio 1") return item.prices.base;
         if (item.appliedPrice === "Precio 2") return item.prices.wholesale;
         if (item.appliedPrice === "Precio 3") return item.prices.retail;
@@ -296,7 +298,8 @@ const InvoiceCreate = ({ initialInvoiceData = null }) => {
           productId: item.productId,
           productName: item.productName,
           quantity: item.quantity,
-          price: getPriceValue(item)
+          price: getPriceValue(item),
+          prices: item.prices
         })),
         region: selectedRegion.name,
         province: selectedProvince ? selectedProvince.name : "",
@@ -306,11 +309,10 @@ const InvoiceCreate = ({ initialInvoiceData = null }) => {
       };
       if (isEditing) {
         await updateInvoice(editingData.id, invoiceData);
-        console.log("Factura actualizada exitosamente");
       } else {
         await createInvoice(invoiceData);
-        console.log("Factura creada exitosamente");
       }
+      navigate(all_routes.invoices);
     } catch (error) {
       console.error("Error al enviar la factura:", error);
     }

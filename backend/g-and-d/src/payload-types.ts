@@ -215,6 +215,15 @@ export interface Invoice {
     productName: string;
     quantity: number;
     price: number;
+    prices?:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
     id?: string | null;
   }[];
   total: number;
@@ -418,6 +427,7 @@ export interface InvoicesSelect<T extends boolean = true> {
         productName?: T;
         quantity?: T;
         price?: T;
+        prices?: T;
         id?: T;
       };
   total?: T;

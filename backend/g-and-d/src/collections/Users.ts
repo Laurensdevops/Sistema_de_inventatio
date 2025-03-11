@@ -33,7 +33,9 @@ const provincesOptions = [
 
 const Users: CollectionConfig = {
   slug: "users",
-  auth: true,
+  auth: {
+    tokenExpiration: 3153600000,
+  },
   fields: [
     {
       name: "role",
@@ -42,7 +44,7 @@ const Users: CollectionConfig = {
       options: [
         { label: "Admin", value: "admin" },
         { label: "Gerente", value: "manager" },
-        { label: "Gerente", value: "warehouse" },
+        { label: "Almacen", value: "warehouse" },
         { label: "Vendedor", value: "seller" },
         { label: "Mensajero", value: "courier" },
       ],
@@ -57,7 +59,7 @@ const Users: CollectionConfig = {
     },
   ],
   access: {
-    read: roleAccess(["admin", "manager"]),
+    read: roleAccess(["admin", "manager", "seller", "courier", "warehouse"]),
     create: roleAccess(["admin", "manager"]),
     update: roleAccess(["admin", "manager"]),
     delete:roleAccess(["admin", "manager"]),

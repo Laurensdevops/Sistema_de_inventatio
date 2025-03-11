@@ -8,8 +8,20 @@ import { useDispatch } from "react-redux";
 import { logoutUser } from "../../core/redux/action";
 
 const Header = () => {
+  const currentUser = JSON.parse(localStorage.getItem("user"));
+
+  const roleText = {
+    admin: "Administrador",
+    courier: "Mensajero",
+    seller: "Vendedor",
+    warehouse: "Almacén",
+    manager: "Gerente",
+  };
+/* eslint-disable react/prop-types */
+
+
   const route = all_routes;
-  const [toggle, SetToggle] = useState(false);
+  const [toggle] = useState(false);
 
   const dispatch = useDispatch();
 
@@ -52,11 +64,7 @@ const Header = () => {
     return () => {
       document.removeEventListener("mouseover", handleMouseover);
     };
-  }, []); 
-  const handlesidebar = () => {
-    document.body.classList.toggle("mini-sidebar");
-    SetToggle((current) => !current);
-  };
+  }, []);
   const expandMenu = () => {
     document.body.classList.remove("expand-menu");
   };
@@ -69,16 +77,6 @@ const Header = () => {
     document?.querySelector("html")?.classList?.toggle("menu-opened");
   };
 
-  let pathname = location.pathname;
-
-  const exclusionArray = [
-    "/reactjs/template/dream-pos/index-three",
-    "/reactjs/template/dream-pos/index-one",
-  ];
-  if (exclusionArray.indexOf(window.location.pathname) >= 0) {
-    return "";
-  }
-
   return (
     <>
       <div className="header">
@@ -88,29 +86,8 @@ const Header = () => {
           onMouseLeave={expandMenu}
           onMouseOver={expandMenuOpen}
         >
-          <Link to="/product-list" className="logo logo-normal">
+          <Link style={{height: "100px"}} to="/product-list" className="logo logo-normal">
             <ImageWithBasePath src="assets/img/logo.png" alt="img" />
-          </Link>
-          <Link to="/product-list" className="logo logo-white">
-            <ImageWithBasePath src="assets/img/logo.png" alt="img" />
-          </Link>
-          <Link to="/product-list" className="logo-small">
-            <ImageWithBasePath src="assets/img/logo.png" alt="img" />
-          </Link>
-          <Link
-            id="toggle_btn"
-            to="#"
-            style={{
-              display:
-                pathname.includes("tasks") || pathname.includes("pos")
-                  ? "none"
-                  : pathname.includes("compose")
-                  ? "none"
-                  : "",
-            }}
-            onClick={handlesidebar}
-          >
-            <FeatherIcon icon="chevrons-left" className="feather-16" />
           </Link>
         </div>
         {/* /Logo */}
@@ -286,7 +263,7 @@ const Header = () => {
             </div>
           </li> */}
           {/* /Select Store */}
-          
+
 
           {/* Notifications */}
           <li className="nav-item dropdown nav-item-box">
@@ -471,8 +448,10 @@ const Header = () => {
                   />
                 </span>
                 <span className="user-detail">
-                  <span className="user-name">John Smilga</span>
-                  <span className="user-role">Super Admin</span>
+                  <span className="user-name">{currentUser?.email}</span>
+                  <span className="user-role">
+                    {roleText[currentUser?.role] || currentUser?.role}
+                  </span>
                 </span>
               </span>
             </Link>
@@ -487,8 +466,8 @@ const Header = () => {
                     <span className="status online" />
                   </span>
                   <div className="profilesets">
-                    <h6>John Smilga</h6>
-                    <h5>Super Admin</h5>
+                    <h6>{currentUser?.email}</h6>
+                    <h5>{roleText[currentUser?.role] || currentUser?.role}</h5>
                   </div>
                 </div>
                 <hr className="m-0" />

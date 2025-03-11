@@ -153,7 +153,7 @@ export const publicRoutes = [
     name: "invoicecreate",
     element: <InvoiceCreate />,
     route: Route,
-    allowedRoles: ['admin', 'manager', 'seller'],
+    allowedRoles: ['admin', 'manager', 'seller', 'warehouse'],
 
   },
   {
@@ -162,7 +162,7 @@ export const publicRoutes = [
     name: "invoices",
     element: <Invoices />,
     route: Route,
-    allowedRoles: ['admin', 'courier', 'seller'],
+    allowedRoles: ['admin', 'courier', 'seller', 'warehouse'],
   },
   {
     id: 93,
@@ -188,7 +188,7 @@ export const publicRoutes = [
     name: "generalsettings",
     element: <GeneralSettings />,
     route: Route,
-    allowedRoles: ['admin', 'manager', 'seller', 'courier'],
+    allowedRoles: ['admin', 'manager', 'seller', 'courier', 'warehouse'],
 
   },
   {
@@ -206,7 +206,7 @@ export const publicRoutes = [
     name: "invoiceview",
     element: <Invoicedetail />,
     route: Route,
-    allowedRoles: ['admin', 'manager', 'seller', 'courier'],
+    allowedRoles: ['admin', 'manager', 'seller', 'courier', 'warehouse'],
 
   },
   {
@@ -289,7 +289,7 @@ export const publicRoutes = [
     path: "*",
     name: "NotFound",
     element: <Navigate to="/" />,
-    allowedRoles: ['admin', 'manager', 'seller', 'courier'],
+    allowedRoles: ['admin', 'manager', 'seller', 'courier', 'warehouse'],
     route: Route,
   },
   {
@@ -298,7 +298,7 @@ export const publicRoutes = [
     name: 'Root',
     element: <Navigate to="/signin" />,
     route: Route,
-    allowedRoles: ['admin', 'manager', 'seller', 'courier'],
+    allowedRoles: ['admin', 'manager', 'seller', 'courier', 'warehouse'],
 
   },
 ];
@@ -310,7 +310,7 @@ export const pagesRoute = [
     name: "signin",
     element: <Signin />,
     route: Route,
-    allowedRoles: ['admin', 'manager', 'seller', 'courier'],
+    allowedRoles: ['admin', 'manager', 'seller', 'courier', 'warehouse'],
   },
   // {
   //   id: 7,
@@ -346,7 +346,7 @@ export const pagesRoute = [
     name: "error404",
     element: <Error404 />,
     route: Route,
-    allowedRoles: ['admin', 'manager', 'seller', 'courier'],
+    allowedRoles: ['admin', 'manager', 'seller', 'courier', 'warehouse'],
 
   },
   // {

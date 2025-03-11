@@ -97,6 +97,11 @@ const Invoices: CollectionConfig = {
           required: true,
           label: "Precio Unitario",
         },
+        {
+          name: "prices",
+          type: "json",
+          label: "Precios del Producto",
+        }
       ],
     },
     {

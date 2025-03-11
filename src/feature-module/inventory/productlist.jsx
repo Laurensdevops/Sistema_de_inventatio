@@ -45,7 +45,6 @@ const ProductList = () => {
 
   useEffect(() => {
     if (!productsLoading && !categoriesLoading) {
-      console.log("Productos:", products);
       // console.log("Producto Reciente:", recentProduct);
       // console.log("Más Vendidos:", bestSellers);
     }
@@ -279,7 +278,6 @@ const ProductList = () => {
                             </div>
                           </div>
                         ))}
-                        {console.log("productos:", products)}
                       </div>
                     </div>
                   </div>
