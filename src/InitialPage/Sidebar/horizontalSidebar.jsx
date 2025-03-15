@@ -1,11 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 
 const HorizontalSidebar = () => {
   const [isActive1, setIsActive1] = useState(false);
   const [isActive2, setIsActive2] = useState(false);
   const [isActive3, setIsActive3] = useState(false);
-  const [isActive4, setIsActive4] = useState(false);
   const [isActive5, setIsActive5] = useState(false);
 
   const [subActive1, setsubActive1] = useState(false);
@@ -13,6 +12,35 @@ const HorizontalSidebar = () => {
   const [subActive3, setsubActive3] = useState(false);
   const [subActive4, setsubActive4] = useState(false);
   const [subActive5, setsubActive5] = useState(false);
+
+  const sidebarRef = useRef(null);
+
+  // Función para cerrar todos los menús
+  const closeAllMenus = () => {
+    setIsActive1(false);
+    setIsActive2(false);
+    setIsActive3(false);
+    setIsActive5(false);
+    setsubActive1(false);
+    setsubActive2(false);
+    setsubActive3(false);
+    setsubActive4(false);
+    setsubActive5(false);
+  };
+
+  // Listener para detectar click fuera del sidebar
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (sidebarRef.current && !sidebarRef.current.contains(event.target)) {
+        closeAllMenus();
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const handleSubClick1 = () => {
     setsubActive1(!subActive1);
@@ -28,26 +56,23 @@ const HorizontalSidebar = () => {
   };
   const handleSubClick5 = () => {
     setsubActive5(!subActive5);
-  }
+  };
   const handleSelectClick1 = () => {
     setIsActive1(!isActive1);
     setIsActive2(false);
     setIsActive3(false);
-    setIsActive4(false);
     setIsActive5(false);
   };
   const handleSelectClick2 = () => {
     setIsActive1(false);
     setIsActive2(!isActive2);
     setIsActive3(false);
-    setIsActive4(false);
     setIsActive5(false);
   };
   const handleSelectClick3 = () => {
     setIsActive1(false);
     setIsActive2(false);
     setIsActive3(!isActive3);
-    setIsActive4(false);
     setIsActive5(false);
   };
 
@@ -55,12 +80,11 @@ const HorizontalSidebar = () => {
     setIsActive1(false);
     setIsActive2(false);
     setIsActive3(false);
-    setIsActive4(false);
     setIsActive5(!isActive5);
   };
 
   return (
-    <div className="sidebar horizontal-sidebar">
+    <div ref={sidebarRef} className="sidebar horizontal-sidebar">
       <div id="sidebar-menu-3" className="sidebar-menu">
         <ul className="nav">
           <li className="submenu">
@@ -119,7 +143,8 @@ const HorizontalSidebar = () => {
                     <Link to="invoices">
                       <span>Facturas</span>
                     </Link>
-                  </li>                  <li>
+                  </li>
+                  <li>
                     <Link to="invoice-create">
                       <span>Crear factura</span>
                     </Link>
@@ -140,13 +165,6 @@ const HorizontalSidebar = () => {
                   <span>Proximamente</span>
                   <span className="menu-arrow" />
                 </Link>
-                {/* <ul style={{ display: subActive2 ? "block" : "none" }}>
-                  <li>
-                    <Link to="">
-                      <span>example</span>
-                    </Link>
-                  </li>
-                </ul> */}
               </li>
               <li className="submenu">
                 <Link
@@ -157,11 +175,6 @@ const HorizontalSidebar = () => {
                   <span>Proximamente</span>
                   <span className="menu-arrow" />
                 </Link>
-                {/* <ul style={{ display: subActive3 ? "block" : "none" }}>
-                  <li>
-                    <Link to="">example</Link>
-                  </li>
-                </ul> */}
               </li>
             </ul>
           </li>
@@ -190,7 +203,6 @@ const HorizontalSidebar = () => {
                       <span>Empleados</span>
                     </Link>
                   </li>
-
                   <li>
                     <Link to="#">
                       <span>Contactos</span>
@@ -206,13 +218,8 @@ const HorizontalSidebar = () => {
                 >
                   <span>Roles &amp; Permisos</span>
                 </Link>
-                <ul style={{ display: isActive4 ? "block" : "none" }}>
-                  {/* porner esto dentro de las cuentas */}
-                  {/* <li>
-                    <Link to="delete-account">
-                      <span>Delete Account Request</span>
-                    </Link>
-                  </li> */}
+                <ul style={{ display: subActive4 ? "block" : "none" }}>
+                  {/* Puedes incluir más opciones aquí */}
                 </ul>
               </li>
             </ul>
@@ -227,13 +234,12 @@ const HorizontalSidebar = () => {
               <span>Reportes</span> <span className="menu-arrow" />
             </Link>
             <ul style={{ display: isActive5 ? "block" : "none" }}>
-                  {/* porner esto dentro de las cuentas */}
-                  <li>
-                    <Link to="/users-report">
-                      <span>Reporte de ventas</span>
-                    </Link>
-                  </li>
-              </ul>
+              <li>
+                <Link to="/users-report">
+                  <span>Reporte de ventas</span>
+                </Link>
+              </li>
+            </ul>
           </li>
         </ul>
       </div>

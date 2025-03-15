@@ -46,13 +46,20 @@ export const SidebarData = [
     submenu: false,
     showSubRoute: false,
     submenuItems: [
-      // {
-      //   label: "Sales",
-      //   link: "/sales-list",
-      //   icon: <Icon.ShoppingCart />,
-      //   showSubRoute: false,
-      //   submenu: false,
-      // },
+      {
+        label: "Facturas",
+        link: "/invoices",
+        icon: null,
+        showSubRoute: false,
+        submenu: false,
+      },
+      {
+        label: "Crear factura",
+        link: "/invoice-create",
+        icon: null,
+        showSubRoute: false,
+        submenu: false,
+      },
     ],
   },
   // {
@@ -221,12 +228,12 @@ export const SidebarData = [
     showSubRoute: false,
     submenuHdr: "Reports",
     submenuItems: [
-      // {
-      //   label: "Sales Report",
-      //   link: "/sales-report",
-      //   icon: <Icon.BarChart2 />,
-      //   showSubRoute: false,
-      // },
+      {
+        label: "Reporte de usuarios",
+        link: "/users-report",
+        icon: <Icon.BarChart2 />,
+        showSubRoute: false,
+      },
     ],
   },
 

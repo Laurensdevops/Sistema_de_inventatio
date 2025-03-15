@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import PropTypes from "prop-types";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { OverlayTrigger, Tooltip, Modal, Button} from "react-bootstrap";
+import { OverlayTrigger, Tooltip, Modal, Button } from "react-bootstrap";
 import { PlusCircle, RotateCcw } from "feather-icons-react/build/IconComponents";
 import { all_routes } from "../../Router/all_routes";
 import ImageWithBasePath from "../../core/img/imagewithbasebath";
@@ -91,6 +91,7 @@ const InvoiceCreate = ({ initialInvoiceData = null }) => {
   );
 
   const [productModalOpen, setProductModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { products, loading: productsLoading, error: productsError } = useProducts();
   const { categories, loading: catLoading, error: catError } = useCategories();
@@ -279,6 +280,7 @@ const InvoiceCreate = ({ initialInvoiceData = null }) => {
 
   const handleInvoiceSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true); // Deshabilitamos el botón y evitamos cambios mientras se envía
     try {
       const client = await getOrCreateClient();
       const generateInvoiceNumber = () => `F-${new Date().getTime()}`;
@@ -312,9 +314,18 @@ const InvoiceCreate = ({ initialInvoiceData = null }) => {
       } else {
         await createInvoice(invoiceData);
       }
+      // Se limpian los campos (borramos los cambios) antes de navegar
+      setInvoiceItems([]);
+      setClientName("");
+      setClientPhone("");
+      setClientEmail("");
+      setClientAddress("");
+      setPaymentMethod("efectivo");
       navigate(all_routes.invoices);
     } catch (error) {
       console.error("Error al enviar la factura:", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -546,8 +557,8 @@ const InvoiceCreate = ({ initialInvoiceData = null }) => {
                 </table>
               </div>
               <div className="btn-addproduct mb-2 mt-3">
-                <button type="submit" className="btn btn-submit">
-                  {isEditing ? "Actualizar Factura" : "Guardar Factura"}
+                <button type="submit" className="btn btn-submit" disabled={isSubmitting}>
+                  {isSubmitting ? "Guardando factura..." : isEditing ? "Actualizar Factura" : "Guardar Factura"}
                 </button>
               </div>
             </div>
