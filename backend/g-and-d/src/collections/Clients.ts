@@ -45,7 +45,7 @@ const Clients: CollectionConfig = {
   ],
   access: {
     read: roleAccess(["admin", "manager", "seller", "courier"]),
-    create: roleAccess(["admin", "manager"]),
+    create: roleAccess(["admin", "manager", "seller"]),
     update: roleAccess(["admin", "manager", "seller"]),
     delete: roleAccess(["admin"]),
   },
