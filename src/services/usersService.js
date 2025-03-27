@@ -1,21 +1,33 @@
 import { apiRequest } from "./apiClient";
 
-export const getCouriersByProvince = async (province) => {
+
+export const getCouriersByProvince = async (province, region) => {
   try {
+    // Se arma la consulta base: rol igual a "courier"
+    let query = { role: { equals: "courier" } };
+
+    // Si se proporciona provincia (y no está vacía), se usa para la búsqueda
+    if (province && province.trim() !== "") {
+      query.province = { equals: province };
+    } else if (region && region.trim() !== "") {
+      // Si no hay provincia, se usa la región
+      query.region = { equals: region };
+    }
+
     const queryParams = {
-      where: JSON.stringify({
-        role: { equals: "courier" },
-        province: { equals: province }
-      })
+      where: JSON.stringify(query)
     };
 
-    const response = await apiRequest("users", "GET", null, queryParams);
+    // Usar apiRequest en lugar de fetch
+    const response = await apiRequest(`users`, "GET", null, queryParams);
+    console.log(response)
     return response.docs || response;
   } catch (error) {
-    console.error("Error fetching couriers by province:", error);
+    console.error("Error en getCouriersByProvince:", error);
     throw error;
   }
 };
+
 
 export const getUsers = async () => {
   try {

@@ -263,7 +263,7 @@ const ProductForm = () => {
                           {/* Precio base */}
                           <div className="col-lg-4 col-sm-6 col-12">
                             <div className="mb-3 add-product">
-                              <label className="form-label">Precio base</label>
+                              <label className="form-label">Precio Caja</label>
                               <input
                                 type="number"
                                 className="form-control"

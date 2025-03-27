@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from "react";
 import PropTypes from "prop-types";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { OverlayTrigger, Tooltip, Modal, Button } from "react-bootstrap";
-import { PlusCircle, RotateCcw } from "feather-icons-react/build/IconComponents";
+import {  useLocation, useNavigate } from "react-router-dom";
+import { Modal, Button } from "react-bootstrap";
+import { PlusCircle } from "feather-icons-react/build/IconComponents";
 import { all_routes } from "../../Router/all_routes";
 import ImageWithBasePath from "../../core/img/imagewithbasebath";
 import useProducts from "../../hooks/useProducts";
@@ -12,7 +12,7 @@ import { getClientByPhone, getClientByEmail, createClient } from "../../services
 import { createInvoice, updateInvoice } from "../../services/invoiceService";
 
 const regionsData = [
-  { name: "Santo Domingo", provinces: [] },
+  { name: "Santo Domingo", provinces: [], tariff: 100 },
   {
     name: "Región Este",
     provinces: [
@@ -82,12 +82,13 @@ const InvoiceCreate = ({ initialInvoiceData = null }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 3;
 
+  // Si la región no tiene provincias, usamos directamente su tarifa
   const [selectedRegion, setSelectedRegion] = useState(regionsData[0]);
   const [selectedProvince, setSelectedProvince] = useState(
     regionsData[0].provinces.length > 0 ? regionsData[0].provinces[0] : null
   );
   const [customTariff, setCustomTariff] = useState(
-    selectedProvince ? selectedProvince.tariff : ""
+    regionsData[0].provinces.length > 0 ? regionsData[0].provinces[0].tariff : regionsData[0].tariff
   );
 
   const [productModalOpen, setProductModalOpen] = useState(false);
@@ -129,6 +130,10 @@ const InvoiceCreate = ({ initialInvoiceData = null }) => {
             const provFound = regionFound.provinces.find((p) => p.name === editingData.province);
             setSelectedProvince(provFound || regionFound.provinces[0]);
             setCustomTariff(provFound ? provFound.tariff : regionFound.provinces[0].tariff);
+          } else {
+            // Si la región no tiene provincias, usamos su tarifa
+            setSelectedProvince(null);
+            setCustomTariff(regionFound.tariff);
           }
         }
       }
@@ -237,20 +242,16 @@ const InvoiceCreate = ({ initialInvoiceData = null }) => {
   }, [clientPhone, isEditing]);
 
   useEffect(() => {
-    if (selectedRegion && selectedRegion.provinces.length > 0) {
-      setSelectedProvince(selectedRegion.provinces[0]);
-      setCustomTariff(selectedRegion.provinces[0].tariff);
-    } else {
-      setSelectedProvince(null);
-      setCustomTariff("");
+    if (selectedRegion) {
+      if (selectedRegion.provinces.length > 0) {
+        setSelectedProvince(selectedRegion.provinces[0]);
+        setCustomTariff(selectedRegion.provinces[0].tariff);
+      } else {
+        setSelectedProvince(null);
+        setCustomTariff(selectedRegion.tariff);
+      }
     }
   }, [selectedRegion]);
-
-  const renderTooltip = (props) => (<Tooltip id="pdf-tooltip" {...props}>Pdf</Tooltip>);
-  const renderExcelTooltip = (props) => (<Tooltip id="excel-tooltip" {...props}>Excel</Tooltip>);
-  const renderPrinterTooltip = (props) => (<Tooltip id="printer-tooltip" {...props}>Imprimir</Tooltip>);
-  const renderRefreshTooltip = (props) => (<Tooltip id="refresh-tooltip" {...props}>Refrescar</Tooltip>);
-  const renderCreateInvoiceTooltip = (props) => (<Tooltip id="create-invoice-tooltip" {...props}>{isEditing ? "Editar factura" : "Crear factura"}</Tooltip>);
 
   const getOrCreateClient = async () => {
     let client = null;
@@ -267,20 +268,55 @@ const InvoiceCreate = ({ initialInvoiceData = null }) => {
       }
     }
     if (!client) {
-      client = await createClient({
+      const newClient = await createClient({
         name: clientName,
         phone: clientPhone,
         email: clientEmail,
         address: clientAddress,
         paymentMethod: paymentMethod
       });
+      if (newClient && (newClient._id || newClient.id)) {
+        client = newClient;
+      } else {
+        throw new Error("Cliente creado por favor vuelva a generar la factura.");
+      }
     }
     return client;
   };
 
   const handleInvoiceSubmit = async (e) => {
     e.preventDefault();
-    setIsSubmitting(true); // Deshabilitamos el botón y evitamos cambios mientras se envía
+
+    if (!clientName) {
+      window.alert("Falta el nombre del cliente.");
+      return;
+    }
+    if (!clientPhone) {
+      window.alert("Falta el teléfono del cliente.");
+      return;
+    }
+    if (!clientEmail) {
+      window.alert("Falta el email del cliente.");
+      return;
+    }
+    if (!clientAddress) {
+      window.alert("Falta la dirección del cliente.");
+      return;
+    }
+    if (invoiceItems.length === 0) {
+      window.alert("Debe agregar al menos un producto a la factura.");
+      return;
+    }
+    if (!customTariff) {
+      window.alert("Falta la tarifa.");
+      return;
+    }
+    if (selectedRegion.provinces.length > 0 && !selectedProvince) {
+      window.alert("Falta seleccionar la provincia.");
+      return;
+    }
+
+    setIsSubmitting(true);
     try {
       const client = await getOrCreateClient();
       const generateInvoiceNumber = () => `F-${new Date().getTime()}`;
@@ -314,7 +350,6 @@ const InvoiceCreate = ({ initialInvoiceData = null }) => {
       } else {
         await createInvoice(invoiceData);
       }
-      // Se limpian los campos (borramos los cambios) antes de navegar
       setInvoiceItems([]);
       setClientName("");
       setClientPhone("");
@@ -324,6 +359,7 @@ const InvoiceCreate = ({ initialInvoiceData = null }) => {
       navigate(all_routes.invoices);
     } catch (error) {
       console.error("Error al enviar la factura:", error);
+      window.alert(error.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -340,43 +376,6 @@ const InvoiceCreate = ({ initialInvoiceData = null }) => {
               <h6>{isEditing ? "Editar factura" : "Crear factura"}</h6>
             </div>
           </div>
-          <ul className="table-top-head">
-            <li>
-              <OverlayTrigger placement="top" overlay={renderTooltip}>
-                <Link>
-                  <ImageWithBasePath src="assets/img/icons/pdf.svg" alt="pdf icon" />
-                </Link>
-              </OverlayTrigger>
-            </li>
-            <li>
-              <OverlayTrigger placement="top" overlay={renderExcelTooltip}>
-                <Link>
-                  <ImageWithBasePath src="assets/img/icons/excel.svg" alt="excel icon" />
-                </Link>
-              </OverlayTrigger>
-            </li>
-            <li>
-              <OverlayTrigger placement="top" overlay={renderPrinterTooltip}>
-                <Link>
-                  <i data-feather="printer" className="feather-printer" />
-                </Link>
-              </OverlayTrigger>
-            </li>
-            <li>
-              <OverlayTrigger placement="top" overlay={renderRefreshTooltip}>
-                <Link>
-                  <RotateCcw />
-                </Link>
-              </OverlayTrigger>
-            </li>
-            <li>
-              <OverlayTrigger placement="top" overlay={renderCreateInvoiceTooltip}>
-                <Link to="#" onClick={() => setProductModalOpen(true)}>
-                  <PlusCircle />
-                </Link>
-              </OverlayTrigger>
-            </li>
-          </ul>
         </div>
 
         {/* Sección de datos del cliente */}
@@ -453,7 +452,7 @@ const InvoiceCreate = ({ initialInvoiceData = null }) => {
                       setCustomTariff(region.provinces[0].tariff);
                     } else {
                       setSelectedProvince(null);
-                      setCustomTariff("");
+                      setCustomTariff(region.tariff);
                     }
                   }}
                 >
@@ -465,7 +464,7 @@ const InvoiceCreate = ({ initialInvoiceData = null }) => {
                 </select>
               </div>
               <div className="col-md-4">
-                {selectedRegion && selectedRegion.provinces.length > 0 && (
+                {selectedRegion.provinces.length > 0 && (
                   <>
                     <label>Provincia</label>
                     <select
@@ -488,17 +487,13 @@ const InvoiceCreate = ({ initialInvoiceData = null }) => {
                 )}
               </div>
               <div className="col-md-4">
-                {selectedRegion && selectedRegion.provinces.length > 0 && (
-                  <>
-                    <label>Tarifa</label>
-                    <input
-                      type="number"
-                      className="form-control"
-                      value={customTariff}
-                      onChange={(e) => setCustomTariff(e.target.value)}
-                    />
-                  </>
-                )}
+                <label>Tarifa</label>
+                <input
+                  type="number"
+                  className="form-control"
+                  value={customTariff}
+                  onChange={(e) => setCustomTariff(e.target.value)}
+                />
               </div>
             </div>
           </div>
@@ -642,9 +637,7 @@ const InvoiceCreate = ({ initialInvoiceData = null }) => {
                             <Button
                               variant="primary"
                               size="sm"
-                              onClick={() => {
-                                addProductToInvoice(product);
-                              }}
+                              onClick={() => addProductToInvoice(product)}
                             >
                               Agregar
                             </Button>
@@ -679,6 +672,31 @@ const InvoiceCreate = ({ initialInvoiceData = null }) => {
             </div>
           </Modal.Body>
         </Modal>
+
+        {/* Botón fijo para agregar productos */}
+        <div
+          style={{
+            position: "fixed",
+            bottom: "20px",
+            right: "20px",
+            zIndex: 1000,
+          }}
+        >
+          <Button
+            variant="primary"
+            onClick={() => setProductModalOpen(true)}
+            style={{
+              borderRadius: "50%",
+              width: "60px",
+              height: "60px",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <PlusCircle />
+          </Button>
+        </div>
       </div>
     </div>
   );

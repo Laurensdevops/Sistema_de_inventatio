@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { OverlayTrigger, Tooltip, Modal, Button, Form } from "react-bootstrap";
-import { PlusCircle } from "feather-icons-react/build/IconComponents";
+import { Modal, Button, Form } from "react-bootstrap";
 import { all_routes } from "../../Router/all_routes";
 import useInvoices from "../../hooks/useInvoices";
 import { updateInvoice } from "../../services/invoiceService";
@@ -104,7 +103,8 @@ const Invoices = () => {
     setSelectedCourier(invoice.assignedCourier ? getId(invoice.assignedCourier) : "");
     setCourierSearch("");
     try {
-      const fetchedCouriers = await getCouriersByProvince(invoice.province);
+      const fetchedCouriers = await getCouriersByProvince(invoice.province, invoice.region);
+      console.log(fetchedCouriers)
       setCouriers(fetchedCouriers);
     } catch (err) {
       console.error("Error al cargar mensajeros:", err);
@@ -144,14 +144,13 @@ const Invoices = () => {
     navigate(all_routes.invoicecreate, { state: { initialInvoiceData: invoice } });
   };
 
-  const filteredCouriers = couriers.filter(
-    (courier) =>
-      courier.email.toLowerCase().includes(courierSearch.toLowerCase()) &&
-      courier.role === "courier" &&
-      courier.province === editingInvoice?.province
-  );
-
-  const renderCreateInvoiceTooltip = (props) => <Tooltip id="create-invoice-tooltip" {...props}>Crear factura</Tooltip>;
+  const filteredCouriers = couriers.filter((courier) => {
+    const locationMatch = editingInvoice?.province && editingInvoice.province.trim() !== ""
+      ? courier.province === editingInvoice.province
+      : courier.province === editingInvoice?.region;
+    const matchesSearch = courier.email.toLowerCase().includes(courierSearch.toLowerCase());
+    return matchesSearch && courier.role === "courier" && locationMatch;
+  });
 
   return (
     <div className="page-wrapper">
@@ -164,15 +163,6 @@ const Invoices = () => {
               <h6>Crear y manejar facturas</h6>
             </div>
           </div>
-          <ul className="table-top-head">
-            <li>
-              <OverlayTrigger placement="top" overlay={renderCreateInvoiceTooltip}>
-                <Link to={all_routes.invoicecreate}>
-                  <PlusCircle />
-                </Link>
-              </OverlayTrigger>
-            </li>
-          </ul>
         </div>
 
         <nav className="nav nav-style-1 nav-pills mb-3" role="tablist">

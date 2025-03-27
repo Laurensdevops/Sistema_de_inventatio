@@ -2,14 +2,15 @@ import React, { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 
 const HorizontalSidebar = () => {
+  // Obtener el usuario actual (suponiendo que se almacena en localStorage)
+  const currentUser = JSON.parse(localStorage.getItem("user"));
+
   const [isActive1, setIsActive1] = useState(false);
   const [isActive2, setIsActive2] = useState(false);
   const [isActive3, setIsActive3] = useState(false);
   const [isActive5, setIsActive5] = useState(false);
 
   const [subActive1, setsubActive1] = useState(false);
-  const [subActive2, setsubActive2] = useState(false);
-  const [subActive3, setsubActive3] = useState(false);
   const [subActive4, setsubActive4] = useState(false);
   const [subActive5, setsubActive5] = useState(false);
 
@@ -22,8 +23,6 @@ const HorizontalSidebar = () => {
     setIsActive3(false);
     setIsActive5(false);
     setsubActive1(false);
-    setsubActive2(false);
-    setsubActive3(false);
     setsubActive4(false);
     setsubActive5(false);
   };
@@ -45,18 +44,13 @@ const HorizontalSidebar = () => {
   const handleSubClick1 = () => {
     setsubActive1(!subActive1);
   };
-  const handleSubClick2 = () => {
-    setsubActive2(!subActive2);
-  };
-  const handleSubClick3 = () => {
-    setsubActive3(!subActive3);
-  };
   const handleSubClick4 = () => {
     setsubActive4(!subActive4);
   };
   const handleSubClick5 = () => {
     setsubActive5(!subActive5);
   };
+
   const handleSelectClick1 = () => {
     setIsActive1(!isActive1);
     setIsActive2(false);
@@ -75,7 +69,6 @@ const HorizontalSidebar = () => {
     setIsActive3(!isActive3);
     setIsActive5(false);
   };
-
   const handleSelectClick5 = () => {
     setIsActive1(false);
     setIsActive2(false);
@@ -87,38 +80,38 @@ const HorizontalSidebar = () => {
     <div ref={sidebarRef} className="sidebar horizontal-sidebar">
       <div id="sidebar-menu-3" className="sidebar-menu">
         <ul className="nav">
-          <li className="submenu">
-            <Link
-              to="#"
-              onClick={handleSelectClick1}
-              className={isActive1 ? "subdrop" : ""}
-            >
-              <img src="assets/img/icons/product.svg" alt="img" />
-              <span> Inventario </span> <span className="menu-arrow" />
-            </Link>
-            <ul style={{ display: isActive1 ? "block" : "none" }}>
-              <li>
-                <Link to="#">
-                  <span>Productos</span>
-                </Link>
-              </li>
-              <li>
-                <Link to="add-product">
-                  <span>Crear producto</span>
-                </Link>
-              </li>
-              <li>
-                <Link to="category-list">
-                  <span>Categorias</span>
-                </Link>
-              </li>
-              <li>
-                <Link to="sub-categories">
-                  <span>Sub categorias</span>
-                </Link>
-              </li>
-            </ul>
-          </li>
+          {/* Sección Inventario: solo visible para roles que NO sean "courier" ni "seller" */}
+          {!(currentUser.role === "courier" || currentUser.role === "seller") && (
+            <li className="submenu">
+              <Link
+                to="#"
+                onClick={handleSelectClick1}
+                className={isActive1 ? "subdrop" : ""}
+              >
+                <img src="assets/img/icons/product.svg" alt="img" />
+                <span> Inventario </span> <span className="menu-arrow" />
+              </Link>
+              <ul style={{ display: isActive1 ? "block" : "none" }}>
+                <li>
+                  <Link to="product-list">
+                    <span>Productos</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link to="add-product">
+                    <span>Crear producto</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link to="category-list">
+                    <span>Categorías</span>
+                  </Link>
+                </li>
+              </ul>
+            </li>
+          )}
+
+          {/* Sección Ventas: visible para todos */}
           <li className="submenu">
             <Link
               to="#"
@@ -144,86 +137,70 @@ const HorizontalSidebar = () => {
                       <span>Facturas</span>
                     </Link>
                   </li>
-                  <li>
-                    <Link to="invoice-create">
-                      <span>Crear factura</span>
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="coupons">
-                      <span>Cupones</span>
-                    </Link>
-                  </li>
-                </ul>
-              </li>
-              <li className="submenu">
-                <Link
-                  to="#"
-                  onClick={handleSubClick2}
-                  className={subActive2 ? "subdrop" : ""}
-                >
-                  <span>Proximamente</span>
-                  <span className="menu-arrow" />
-                </Link>
-              </li>
-              <li className="submenu">
-                <Link
-                  to="#"
-                  onClick={handleSubClick3}
-                  className={subActive3 ? "subdrop" : ""}
-                >
-                  <span>Proximamente</span>
-                  <span className="menu-arrow" />
-                </Link>
-              </li>
-            </ul>
-          </li>
-          <li className="submenu">
-            <Link
-              to="#"
-              onClick={handleSelectClick3}
-              className={isActive3 ? "subdrop" : ""}
-            >
-              <img src="assets/img/icons/users1.svg" alt="img" />
-              <span>Gention usuarios</span> <span className="menu-arrow" />
-            </Link>
-            <ul style={{ display: isActive3 ? "block" : "none" }}>
-              <li className="submenu">
-                <Link
-                  to="#"
-                  onClick={handleSubClick4}
-                  className={subActive4 ? "subdrop" : ""}
-                >
-                  <span>Personal</span>
-                  <span className="menu-arrow" />
-                </Link>
-                <ul style={{ display: subActive4 ? "block" : "none" }}>
-                  <li>
-                    <Link to="customers">
-                      <span>Empleados</span>
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="#">
-                      <span>Contactos</span>
-                    </Link>
-                  </li>
-                </ul>
-              </li>
-              <li className="submenu">
-                <Link
-                  to="roles-permissions"
-                  onClick={handleSubClick5}
-                  className={subActive5 ? "subdrop" : ""}
-                >
-                  <span>Roles &amp; Permisos</span>
-                </Link>
-                <ul style={{ display: subActive4 ? "block" : "none" }}>
-                  {/* Puedes incluir más opciones aquí */}
+                  {/* La opción de "Crear factura" se mostrará solo si el usuario NO es mensajero */}
+                  {currentUser.role !== "courier" && (
+                    <li>
+                      <Link to="invoice-create">
+                        <span>Crear factura</span>
+                      </Link>
+                    </li>
+                  )}
                 </ul>
               </li>
             </ul>
           </li>
+
+          {/* Sección Gestión de usuarios: solo visible para roles que NO sean "courier" ni "seller" */}
+          {!(currentUser.role === "courier" || currentUser.role === "seller") && (
+            <li className="submenu">
+              <Link
+                to="#"
+                onClick={handleSelectClick3}
+                className={isActive3 ? "subdrop" : ""}
+              >
+                <img src="assets/img/icons/users1.svg" alt="img" />
+                <span>Gestión usuarios</span> <span className="menu-arrow" />
+              </Link>
+              <ul style={{ display: isActive3 ? "block" : "none" }}>
+                <li className="submenu">
+                  <Link
+                    to="#"
+                    onClick={handleSubClick4}
+                    className={subActive4 ? "subdrop" : ""}
+                  >
+                    <span>Personal</span>
+                    <span className="menu-arrow" />
+                  </Link>
+                  <ul style={{ display: subActive4 ? "block" : "none" }}>
+                    <li>
+                      <Link to="customers">
+                        <span>Empleados</span>
+                      </Link>
+                    </li>
+                    <li>
+                      <Link to="#">
+                        <span>Contactos</span>
+                      </Link>
+                    </li>
+                  </ul>
+                </li>
+                <li className="submenu">
+                  <Link
+                    to="roles-permissions"
+                    onClick={handleSubClick5}
+                    className={subActive5 ? "subdrop" : ""}
+                  >
+                    <span>Roles &amp; Permisos</span>
+                  </Link>
+                  <ul style={{ display: subActive5 ? "block" : "none" }}>
+                    {/* Opciones adicionales */}
+                  </ul>
+                </li>
+              </ul>
+            </li>
+          )}
+
+          {/* Sección Reportes: Visible para todos o condicionalmente según tus necesidades */}
           <li className="submenu">
             <Link
               to="#"

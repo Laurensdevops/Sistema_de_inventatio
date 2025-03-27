@@ -6,20 +6,19 @@ import HorizontalSidebar from "./horizontalSidebar";
 import CollapsedSidebar from "./collapsedSidebar";
 
 const Sidebar = () => {
+  const location = useLocation();
+  const currentUser = JSON.parse(localStorage.getItem("user"));
 
-  const Location = useLocation();
-
-    const [layoutView] = useState("horizontal");
-      useEffect(() => {
-        document.documentElement.setAttribute("data-layout-style", layoutView);
-      }, [layoutView]);
-
+  const [layoutView] = useState("horizontal");
+  useEffect(() => {
+    document.documentElement.setAttribute("data-layout-style", layoutView);
+  }, [layoutView]);
 
   const [subOpen, setSubopen] = useState("");
   const [subsidebar, setSubsidebar] = useState("");
 
   const toggleSidebar = (title) => {
-    if (title == subOpen) {
+    if (title === subOpen) {
       setSubopen("");
     } else {
       setSubopen(title);
@@ -27,12 +26,35 @@ const Sidebar = () => {
   };
 
   const toggleSubsidebar = (subitem) => {
-    if (subitem == subsidebar) {
+    if (subitem === subsidebar) {
       setSubsidebar("");
     } else {
       setSubsidebar(subitem);
     }
   };
+
+  // Filtrar las secciones según el rol del usuario.
+  // Ocultamos "Inventario", "Gestión de usuarios" y "Personal" para "courier" y "seller".
+  const filteredSidebarData = SidebarData.filter((mainItem) => {
+    if (
+      (mainItem.label === "Inventario" ||
+        mainItem.label === "Gestion de usuarios" ||
+        mainItem.label === "Personal") &&
+      (currentUser.role === "courier" || currentUser.role === "seller")
+    ) {
+      return false;
+    }
+    return true;
+  }).map((mainItem) => {
+    // En la sección de Ventas, si el usuario es "courier" se oculta la opción "Crear factura"
+    if (mainItem.label === "Ventas" && currentUser.role === "courier") {
+      const newSubItems = mainItem.submenuItems.filter(
+        (item) => item.label !== "Crear factura"
+      );
+      return { ...mainItem, submenuItems: newSubItems };
+    }
+    return mainItem;
+  });
 
   return (
     <div>
@@ -41,130 +63,93 @@ const Sidebar = () => {
           <div className="sidebar-inner slimscroll">
             <div id="sidebar-menu" className="sidebar-menu">
               <ul>
-                {SidebarData?.map((mainLabel, index) => (
+                {filteredSidebarData?.map((mainLabel, index) => (
                   <li className="submenu-open" key={index}>
-                    <h6 className="submenu-hdr">{mainLabel?.label}</h6>
+                    <h6 className="submenu-hdr">{mainLabel.label}</h6>
                     <ul>
-                      {mainLabel?.submenuItems?.map((title, i) => {
-                        let link_array = [];
-                        title?.submenuItems?.map((link) => {
-                          link_array.push(link?.link);
-                          if (link?.submenu) {
-                            link?.submenuItems?.map((item) => {
-                              link_array.push(item?.link);
-                            });
-                          }
-                          return link_array;
-                        });
-                        title.links = link_array;
-                        return (
-                          <React.Fragment key={i}>
-                            {" "}
-                            <li
-                              className={`submenu ${
-                                !title?.submenu &&
-                                Location.pathname === title?.link
-                                  ? "custom-active-hassubroute-false"
-                                  : ""
+                      {mainLabel?.submenuItems?.map((title, i) => (
+                        <React.Fragment key={i}>
+                          <li
+                            className={`submenu ${
+                              !title.submenu && title.link === location.pathname
+                                ? "custom-active-hassubroute-false"
+                                : ""
+                            }`}
+                          >
+                            <Link
+                              to={title.link}
+                              onClick={() => toggleSidebar(title.label)}
+                              className={`${
+                                subOpen === title.label ? "subdrop" : ""
+                              } ${
+                                title.link === location.pathname ? "active" : ""
                               }`}
                             >
-                              <Link
-                                to={title?.link}
-                                onClick={() => toggleSidebar(title?.label)}
-                                className={`${
-                                  subOpen === title?.label ? "subdrop" : ""
-                                } ${
-                                  title?.links?.includes(Location.pathname)
-                                    ? "active"
-                                    : ""
-                                }`}
-                              >
-                                {title?.icon}
-                                <span className="custom-active-span">
-                                  {title?.label}
-                                </span>
-                                {title?.submenu && (
-                                  <span className="menu-arrow" />
-                                )}
-                              </Link>
+                              {title.icon}
+                              <span className="custom-active-span">
+                                {title.label}
+                              </span>
+                              {title.submenu && <span className="menu-arrow" />}
+                            </Link>
+                            {title.submenu && (
                               <ul
                                 style={{
                                   display:
-                                    subOpen === title?.label ? "block" : "none",
+                                    subOpen === title.label ? "block" : "none",
                                 }}
                               >
-                                {title?.submenuItems?.map(
-                                  (item, titleIndex) => (
-                                    <li
-                                      className="submenu submenu-two"
-                                      key={titleIndex}
+                                {title.submenuItems?.map((item, titleIndex) => (
+                                  <li className="submenu submenu-two" key={titleIndex}>
+                                    <Link
+                                      to={item.link}
+                                      className={`${
+                                        item.link === location.pathname
+                                          ? "active"
+                                          : ""
+                                      } ${
+                                        subsidebar === item.label ? "subdrop" : ""
+                                      }`}
+                                      onClick={() => toggleSubsidebar(item.label)}
                                     >
-                                      <Link
-                                        to={item?.link}
-                                        className={`${
-                                          item?.submenuItems
-                                            ?.map((link) => link.link)
-                                            .includes(Location.pathname) ||
-                                          item?.link === Location.pathname
-                                            ? "active"
-                                            : ""
-                                        } ${
-                                          subsidebar === item?.label
-                                            ? "subdrop"
-                                            : ""
-                                        }`}
-                                        onClick={() =>
-                                          toggleSubsidebar(item?.label)
-                                        }
-                                      >
-                                        {item?.label}
-                                        {item?.submenu && (
-                                          <span className="menu-arrow inside-submenu" />
-                                        )}
-                                      </Link>
+                                      {item.label}
+                                      {item.submenu && (
+                                        <span className="menu-arrow inside-submenu" />
+                                      )}
+                                    </Link>
+                                    {item.submenu && (
                                       <ul
                                         style={{
                                           display:
-                                            subsidebar === item?.label
+                                            subsidebar === item.label
                                               ? "block"
                                               : "none",
                                         }}
                                       >
-                                        {item?.submenuItems?.map(
-                                          (items, subIndex) => (
+                                        {item.submenuItems?.map(
+                                          (subItem, subIndex) => (
                                             <li key={subIndex}>
                                               <Link
-                                                to={items?.link}
+                                                to={subItem.link}
                                                 className={`${
-                                                  subsidebar === items?.label
-                                                    ? "submenu-two subdrop"
-                                                    : "submenu-two"
-                                                } ${
-                                                  items?.submenuItems
-                                                    ?.map((link) => link.link)
-                                                    .includes(
-                                                      Location.pathname
-                                                    ) ||
-                                                  items?.link ===
-                                                    Location.pathname
+                                                  subItem.link === location.pathname
                                                     ? "active"
                                                     : ""
                                                 }`}
                                               >
-                                                {items?.label}
+                                                {subItem.label}
                                               </Link>
                                             </li>
                                           )
                                         )}
                                       </ul>
-                                    </li>
-                                  )
-                                )}
+                                    )}
+                                  </li>
+                                ))}
                               </ul>
-                            </li>
-                          </React.Fragment>
-                        );
-                      })}
+                            )}
+                          </li>
+                        </React.Fragment>
+                      ))}
                     </ul>
                   </li>
                 ))}

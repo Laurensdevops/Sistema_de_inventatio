@@ -251,9 +251,9 @@ const ProductList = () => {
                                 <Link to="#">{product.name}</Link>
                               </h6>
                               <div className="d-flex align-items-center justify-content-between price">
-                                <p><strong>Base:</strong> {product.prices.base}</p>
-                                <p><strong>Retail:</strong> {product.prices.retail}</p>
-                                <p><strong>Mayorista:</strong> {product.prices.wholesale}</p>
+                                <p><strong>Caja:</strong> {product.prices.base}</p>
+                                <p><strong>Detalle:</strong> {product.prices.retail}</p>
+                                <p><strong>Por mayor:</strong> {product.prices.wholesale}</p>
                               </div>
                               <div className="stock-info" style={{ marginTop: "5px" }}>
                                 <p><strong>Stock:</strong> {product.stock}</p>

@@ -139,7 +139,6 @@ const Invoices: CollectionConfig = {
     {
       name: "tariff",
       type: "number",
-      required: true,
       label: "Tarifa",
     },
     {

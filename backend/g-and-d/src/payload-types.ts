@@ -75,10 +75,7 @@ export interface User {
   id: string;
   role: 'admin' | 'manager' | 'warehouse' | 'seller' | 'courier';
   province:
-    | 'Distrito Nacional'
-    | 'Santo Domingo Este'
-    | 'Santo Domingo Norte'
-    | 'Santo Domingo Oeste'
+    | 'Santo Domingo'
     | 'La Altagracia'
     | 'El Seibo'
     | 'Hato Mayor'
@@ -231,7 +228,7 @@ export interface Invoice {
   region: string;
   province?: string | null;
   paymentMethod: 'efectivo' | 'tarjeta';
-  tariff: number;
+  tariff?: number | null;
   assignedCourier?: (string | null) | User;
   stockDeducted?: boolean | null;
   commissionPaidToCourier?: boolean | null;
