@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
   },
 });
 
-const InvoiceDocument = ({ invoice }) => (
+export const InvoiceDocument = ({ invoice }) => (
   <Document>
     <Page size="A4" style={styles.page}>
       <View style={styles.section}>

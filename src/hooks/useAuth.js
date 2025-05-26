@@ -8,7 +8,7 @@ const useAuth = () => {
   const routerRedirect = {
     admin: "/product-list",
     courier: "/invoices",
-    seller: "/invoices",
+    seller: "/product-list",
     warehouse: "/invoices",
     manager: "/product-list",
   };

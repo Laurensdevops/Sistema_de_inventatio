@@ -3,7 +3,10 @@ import { CollectionConfig } from "payload";
 
 // Lista combinada de todas las provincias de RD
 const provincesOptions = [
-  { label: "Santo Domingo", value: "Santo Domingo" },
+  { label: "Distrito Nacional", value: "Distrito Nacional" },
+  { label: "Santo Domingo Este", value: "Santo Domingo Este" },
+  { label: "Santo Domingo Norte", value: "Santo Domingo Norte" },
+  { label: "Santo Domingo Oeste", value: "Santo Domingo Oeste" },
   { label: "La Altagracia", value: "La Altagracia" },
   { label: "El Seibo", value: "El Seibo" },
   { label: "Hato Mayor", value: "Hato Mayor" },

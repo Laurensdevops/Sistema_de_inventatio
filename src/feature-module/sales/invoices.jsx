@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+// src/pages/Invoices.jsx
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Modal, Button, Form } from "react-bootstrap";
 import { all_routes } from "../../Router/all_routes";
@@ -6,20 +7,30 @@ import useInvoices from "../../hooks/useInvoices";
 import { updateInvoice } from "../../services/invoiceService";
 import { getCouriersByProvince } from "../../services/usersService";
 
-// Componentes para generar PDF
-import InvoicePDFGenerator from "../components/GeneratedImagePdf"; // PDF a partir de imagen
-import RealPDFGenerator from "../components/GeneratedPdf"; // PDF real con texto
+// Exportación en lote PNG / PDF
+import { generatePNG, generatePDF, chunk } from "../../utils/invoiceExport";
+
+// Exportadores individuales
+import InvoicePDFGenerator from "../components/GeneratedImagePdf";
+import RealPDFGenerator from "../components/GeneratedPdf";
 
 const Invoices = () => {
   const currentUser = JSON.parse(localStorage.getItem("user"));
   const navigate = useNavigate();
 
+  // pestañas y paginación
   const [selectedTab, setSelectedTab] = useState("pendiente");
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 3;
 
+  // datos remotos
   const { invoices, loading, error } = useInvoices();
 
+  // selección múltiple (evita eslint no-unused-vars porque se usa más abajo)
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  useEffect(() => setSelectedIds(new Set()), [selectedTab]);
+
+  // modales
   const [editingInvoice, setEditingInvoice] = useState(null);
   const [couriers, setCouriers] = useState([]);
   const [courierSearch, setCourierSearch] = useState("");
@@ -27,6 +38,7 @@ const Invoices = () => {
   const [cancelInvoice, setCancelInvoice] = useState(null);
   const [cancelNote, setCancelNote] = useState("");
 
+  // tabs permitidas
   const tabs = [
     { key: "pendiente", label: "Pendientes" },
     { key: "completada", label: "Pagadas" },
@@ -34,124 +46,127 @@ const Invoices = () => {
     { key: "cancelada", label: "Canceladas y no entregado" },
     { key: "cancelada_entregado", label: "Canceladas y entregado" },
     { key: "confirmada", label: "Confirmadas" },
-    { key: "sinPagar", label: "Sin pagar" }
+    { key: "sinPagar", label: "Sin pagar" },
   ];
 
-  const getId = (objOrId) =>
-    typeof objOrId === "object" && objOrId !== null ? objOrId.id : objOrId;
+  const getId = (o) => (typeof o === "object" && o ? o.id : o);
+  const invoiceDocs = Array.isArray(invoices) ? invoices : invoices?.docs || [];
 
-  const invoiceDocs = Array.isArray(invoices)
-    ? invoices
-    : (invoices && invoices.docs) || [];
-
+  // -------------------------------- filtrado por rol
   let visibleDocs = invoiceDocs;
   let visibleTabs = tabs;
-
   if (currentUser.role === "seller") {
     visibleDocs = invoiceDocs.filter(
-      (invoice) =>
-        invoice.createdBy && getId(invoice.createdBy) === currentUser.id
+      (inv) => inv.createdBy && getId(inv.createdBy) === currentUser.id
     );
-    visibleTabs = tabs.filter(tab =>
-      ["pendiente", "cancelada", "cancelada_entregado"].includes(tab.key)
+    visibleTabs = tabs.filter((t) =>
+      ["pendiente", "cancelada", "cancelada_entregado"].includes(t.key)
     );
   } else if (currentUser.role === "courier") {
     visibleDocs = invoiceDocs.filter(
-      (invoice) =>
-        invoice.assignedCourier &&
-        getId(invoice.assignedCourier) === currentUser.id
+      (inv) => inv.assignedCourier && getId(inv.assignedCourier) === currentUser.id
     );
-    visibleTabs = tabs.filter(tab =>
-      ["en_empaquetado", "completada", "cancelada", "cancelada_entregado"].includes(tab.key)
+    visibleTabs = tabs.filter((t) =>
+      ["en_empaquetado", "completada", "cancelada", "cancelada_entregado"].includes(t.key)
     );
   } else if (currentUser.role === "warehouse") {
-    visibleDocs = invoiceDocs.filter((invoice) => {
-      if (invoice.status.toLowerCase() === "confirmada") {
-        return true;
-      }
-      if (invoice.status.toLowerCase() === "en_empaquetado") {
-        return true;
-      }
-      return invoice.assignedCourier && getId(invoice.assignedCourier) === currentUser.id;
+    visibleDocs = invoiceDocs.filter((inv) => {
+      if (["confirmada", "en_empaquetado"].includes(inv.status.toLowerCase())) return true;
+      return inv.assignedCourier && getId(inv.assignedCourier) === currentUser.id;
     });
-    visibleTabs = tabs.filter(tab =>
-      ["en_empaquetado", "cancelada", "cancelada_entregado", "confirmada"].includes(tab.key)
+    visibleTabs = tabs.filter((t) =>
+      ["en_empaquetado", "cancelada", "cancelada_entregado", "confirmada"].includes(t.key)
     );
   }
 
-  const filteredDocs = visibleDocs.filter((invoice) =>
-    invoice.status.toLowerCase() === selectedTab.toLowerCase()
+  // -------------------------------- filtrado por pestaña
+  const filteredDocs = visibleDocs.filter(
+    (inv) => inv.status.toLowerCase() === selectedTab.toLowerCase()
   );
-
   const totalPages = Math.ceil(filteredDocs.length / pageSize);
   const paginatedInvoices = filteredDocs.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
   );
 
-  const changeInvoiceStatus = async (invoiceId, newStatus, extraData = {}) => {
-    try {
-      await updateInvoice(invoiceId, { status: newStatus, ...extraData });
-      window.location.reload();
-    } catch (error) {
-      console.error("Error al actualizar el estado de la factura:", error);
+  // ---------- helpers ----------
+  const toggleSelect = (id, checked) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      checked ? next.add(id) : next.delete(id);
+      return next;
+    });
+  };
+
+  const exportSelectedPNG = async () => {
+    for (const batch of chunk([...selectedIds])) {
+      await Promise.all(batch.map((id) => generatePNG(id)));
     }
   };
 
-  const openEditModal = async (invoice) => {
-    setEditingInvoice(invoice);
-    setSelectedCourier(invoice.assignedCourier ? getId(invoice.assignedCourier) : "");
+  const exportSelectedPDF = async () => {
+    const docs = invoiceDocs.filter((inv) => selectedIds.has(inv.id));
+    for (const batch of chunk(docs)) {
+      await Promise.all(batch.map((inv) => generatePDF(inv)));
+    }
+  };
+
+  const changeInvoiceStatus = async (id, status, extra = {}) => {
+    try {
+      await updateInvoice(id, { status, ...extra });
+      window.location.reload();
+    } catch (err) {
+      console.error("Error al actualizar:", err);
+    }
+  };
+
+  const openEditModal = async (inv) => {
+    setEditingInvoice(inv);
+    setSelectedCourier(inv.assignedCourier ? getId(inv.assignedCourier) : "");
     setCourierSearch("");
     try {
-      const fetchedCouriers = await getCouriersByProvince(invoice.province, invoice.region);
-      console.log(fetchedCouriers)
-      setCouriers(fetchedCouriers);
+      setCouriers(await getCouriersByProvince(inv.province, inv.region));
     } catch (err) {
-      console.error("Error al cargar mensajeros:", err);
+      console.error("Error couriers:", err);
     }
   };
 
   const saveCourierAssignment = async () => {
     if (editingInvoice && selectedCourier) {
-      try {
-        await updateInvoice(editingInvoice.id, { assignedCourier: selectedCourier });
-        setEditingInvoice(null);
-        window.location.reload();
-      } catch (err) {
-        console.error("Error al asignar el mensajero:", err);
-      }
+      await updateInvoice(editingInvoice.id, { assignedCourier: selectedCourier });
+      setEditingInvoice(null);
+      window.location.reload();
     }
   };
 
-  const openCancelModal = (invoice) => {
-    setCancelInvoice(invoice);
+  const openCancelModal = (inv) => {
+    setCancelInvoice(inv);
     setCancelNote("");
   };
 
   const saveCancellation = async () => {
     if (cancelInvoice) {
-      try {
-        await updateInvoice(cancelInvoice.id, { status: "cancelada", cancelNote });
-        setCancelInvoice(null);
-        window.location.reload();
-      } catch (err) {
-        console.error("Error al cancelar la factura:", err);
-      }
+      await updateInvoice(cancelInvoice.id, { status: "cancelada", cancelNote });
+      setCancelInvoice(null);
+      window.location.reload();
     }
   };
 
-  const handleEditInvoice = (invoice) => {
-    navigate(all_routes.invoicecreate, { state: { initialInvoiceData: invoice } });
-  };
+  const handleEditInvoice = (inv) =>
+    navigate(all_routes.invoicecreate, { state: { initialInvoiceData: inv } });
 
-  const filteredCouriers = couriers.filter((courier) => {
-    const locationMatch = editingInvoice?.province && editingInvoice.province.trim() !== ""
-      ? courier.province === editingInvoice.province
-      : courier.province === editingInvoice?.region;
-    const matchesSearch = courier.email.toLowerCase().includes(courierSearch.toLowerCase());
-    return matchesSearch && courier.role === "courier" && locationMatch;
+  const filteredCouriers = couriers.filter((c) => {
+    const okLoc = editingInvoice?.province?.trim()
+      ? c.province === editingInvoice.province
+      : c.province === editingInvoice?.region;
+    return (
+      c.role === "courier" &&
+      okLoc &&
+      c.email.toLowerCase().includes(courierSearch.toLowerCase())
+    );
   });
 
+  // ---------- render ----------
   return (
     <div className="page-wrapper">
       <div className="content">
@@ -165,12 +180,31 @@ const Invoices = () => {
           </div>
         </div>
 
-        <nav className="nav nav-style-1 nav-pills mb-3" role="tablist">
+        {/* Exportación en lote */}
+        <div className="d-flex gap-2 mb-3">
+          <Button
+            variant="outline-secondary"
+            disabled={!selectedIds.size}
+            onClick={exportSelectedPNG}
+          >
+            PNG (5×5)
+          </Button>
+          <Button
+            variant="outline-secondary"
+            disabled={!selectedIds.size}
+            onClick={exportSelectedPDF}
+          >
+            PDF (5×5)
+          </Button>
+        </div>
+
+        {/* Tabs */}
+        <nav className="nav nav-style-1 nav-pills mb-3">
           {visibleTabs.map((tab) => (
             <Link
               key={tab.key}
-              className={`nav-link ${selectedTab === tab.key ? "active" : ""}`}
               to="#"
+              className={`nav-link ${selectedTab === tab.key ? "active" : ""}`}
               onClick={() => {
                 setSelectedTab(tab.key);
                 setCurrentPage(1);
@@ -178,100 +212,119 @@ const Invoices = () => {
             >
               {tab.label}{" "}
               <span className="badge bg-secondary ms-1 rounded-pill">
-                {visibleDocs.filter((inv) => inv.status.toLowerCase() === tab.key.toLowerCase()).length}
+                {
+                  visibleDocs.filter(
+                    (inv) => inv.status.toLowerCase() === tab.key.toLowerCase()
+                  ).length
+                }
               </span>
             </Link>
           ))}
         </nav>
 
+        {/* Lista de facturas */}
         <div className="tab-content">
           {loading ? (
-            <p>Cargando facturas...</p>
+            <p>Cargando facturas…</p>
           ) : error ? (
             <p>Error al cargar facturas.</p>
           ) : filteredDocs.length === 0 ? (
-            <p>No se encontraron facturas para el estado &ldquo;{selectedTab}&rdquo;.</p>
+            <p>No se encontraron facturas para “{selectedTab}”.</p>
           ) : (
             paginatedInvoices.map((invoice) => (
-              // Tarjeta de factura con id para posibles capturas
-              <div key={invoice.id} id={`invoice-card-${invoice.id}`} className="default-cover p-4 mb-3" style={{ position: "relative" }}>
+              <div
+                key={invoice.id}
+                className="default-cover p-4 mb-3"
+                style={{ position: "relative" }}
+              >
+                {/* checkbox */}
+                <input
+                  type="checkbox"
+                  style={{ position: "absolute", top: 10, left: 10 }}
+                  checked={selectedIds.has(invoice.id)}
+                  onChange={(e) => toggleSelect(invoice.id, e.target.checked)}
+                />
+
                 <span className="badge bg-secondary d-inline-block mb-4">
                   Order ID : #{invoice.invoiceNumber}
                 </span>
+
+                {/* datos */}
                 <div className="row">
-                  <div className="col-sm-12 col-md-6 record mb-3">
+                  <div className="col-md-6 mb-3">
                     <table>
                       <tbody>
-                        <tr className="mb-3">
+                        <tr>
                           <td>Emitida</td>
                           <td className="colon">:</td>
-                          <td className="text">
-                            {invoice.createdBy ? invoice.createdBy.email : "No asignado"}
-                          </td>
+                          <td>{invoice.createdBy?.email || "No asignado"}</td>
                         </tr>
                         <tr>
                           <td>Cliente</td>
                           <td className="colon">:</td>
-                          <td className="text">{invoice.Client.name}</td>
+                          <td>{invoice.Client?.name}</td>
                         </tr>
                       </tbody>
                     </table>
                   </div>
-                  <div className="col-sm-12 col-md-6 record mb-3">
+                  <div className="col-md-6 mb-3">
                     <table>
                       <tbody>
                         <tr>
                           <td>Total</td>
                           <td className="colon">:</td>
-                          <td className="text">${invoice.total || "0"}</td>
+                          <td>${invoice.total ?? 0}</td>
                         </tr>
                         <tr>
                           <td>Fecha</td>
                           <td className="colon">:</td>
-                          <td className="text">{new Date(invoice.invoiceDate).toLocaleString()}</td>
+                          <td>
+                            {new Date(invoice.invoiceDate).toLocaleString()}
+                          </td>
                         </tr>
                       </tbody>
                     </table>
                   </div>
-                  <div className="col-sm-12 col-md-6 record mb-3">
+                  <div className="col-md-6 mb-3">
                     <table>
                       <tbody>
                         <tr>
                           <td>Mensajero</td>
                           <td className="colon">:</td>
-                          <td className="text">
-                            {invoice.assignedCourier ? invoice.assignedCourier.email : "No asignado"}
+                          <td>
+                            {invoice.assignedCourier?.email || "No asignado"}
                           </td>
                         </tr>
                         <tr>
                           <td>Estado</td>
                           <td className="colon">:</td>
-                          <td className="text">{invoice.status}</td>
+                          <td>{invoice.status}</td>
                         </tr>
                         <tr>
                           <td>Provincia</td>
                           <td className="colon">:</td>
-                          <td className="text">{invoice.province}</td>
+                          <td>{invoice.province}</td>
                         </tr>
                       </tbody>
                     </table>
                   </div>
                 </div>
 
-                {/* Contenedor para los botones de PDF en la esquina superior derecha */}
-                <div style={{
-                  position: "absolute",
-                  top: "10px",
-                  right: "10px",
-                  display: "flex",
-                  gap: "5px"
-                }}>
-                  {/* Botón PDF por imagen */}
+                {/* botones individuales */}
+                <div
+                  style={{
+                    position: "absolute",
+                    top: 10,
+                    right: 10,
+                    display: "flex",
+                    gap: 5,
+                  }}
+                >
                   <InvoicePDFGenerator invoiceId={invoice.id} />
-                  {/* Botón PDF real (texto selectable) */}
                   <RealPDFGenerator invoice={invoice} />
                 </div>
 
+                {/* acciones rápidas (mantengo tu lógica) */}
                 <div className="btn-row d-flex align-items-center justify-content-between mt-3">
                   <Link
                     to={all_routes.invoiceview}
@@ -280,93 +333,104 @@ const Invoices = () => {
                   >
                     Ver detalles
                   </Link>
-                  {/* Resto de botones según estado */}
+
                   {invoice.status === "pendiente" && (
                     <>
-                      <button onClick={() => handleEditInvoice(invoice)} className="btn btn-primary btn-icon flex-fill">
-                        Editar Factura
+                      <button
+                        className="btn btn-primary btn-icon flex-fill"
+                        onClick={() => handleEditInvoice(invoice)}
+                      >
+                        Editar
                       </button>
-                      <button onClick={() => changeInvoiceStatus(invoice.id, "confirmada")} className="btn btn-success btn-icon flex-fill">
+                      <button
+                        className="btn btn-success btn-icon flex-fill"
+                        onClick={() => changeInvoiceStatus(invoice.id, "confirmada")}
+                      >
                         Confirmar
                       </button>
-                      <button onClick={() => openCancelModal(invoice)} className="btn btn-danger btn-icon flex-fill">
+                      <button
+                        className="btn btn-danger btn-icon flex-fill"
+                        onClick={() => openCancelModal(invoice)}
+                      >
                         Cancelar
                       </button>
                     </>
                   )}
+
                   {invoice.status === "confirmada" && (
                     <>
-                      <button onClick={() => handleEditInvoice(invoice)} className="btn btn-primary btn-icon flex-fill">
-                        Editar Factura
+                      <button
+                        className="btn btn-primary btn-icon flex-fill"
+                        onClick={() => handleEditInvoice(invoice)}
+                      >
+                        Editar
                       </button>
-                      <button onClick={() => changeInvoiceStatus(invoice.id, "en_empaquetado")} className="btn btn-success btn-icon flex-fill">
-                        Confirmar Enpaquetado
+                      <button
+                        className="btn btn-success btn-icon flex-fill"
+                        onClick={() =>
+                          changeInvoiceStatus(invoice.id, "en_empaquetado")
+                        }
+                      >
+                        Confirmar Empaquetado
                       </button>
-                      <button onClick={() => openCancelModal(invoice)} className="btn btn-danger btn-icon flex-fill">
+                      <button
+                        className="btn btn-danger btn-icon flex-fill"
+                        onClick={() => openCancelModal(invoice)}
+                      >
                         Cancelar
                       </button>
                     </>
                   )}
+
+                  {/* Acciones cuando la factura está en empaquetado */}
                   {invoice.status === "en_empaquetado" && (
                     <>
-                      {(currentUser.role === "admin" || currentUser.role === "seller" || currentUser.role === "warehouse" || currentUser.role === "manager") && (
-                        <button onClick={() => handleEditInvoice(invoice)} className="btn btn-primary btn-icon flex-fill">
-                          Editar Factura
-                        </button>
-                      )}
+                      {/* si aún no tiene mensajero asignado */}
                       {!invoice.assignedCourier && (
-                        <button onClick={() => openEditModal(invoice)} className="btn btn-success btn-icon flex-fill">
+                        <button
+                          className="btn btn-success btn-icon flex-fill"
+                          onClick={() => openEditModal(invoice)}
+                        >
                           Asignar Mensajero
                         </button>
                       )}
-                      {invoice.assignedCourier &&
-                        currentUser &&
-                        getId(invoice.assignedCourier) === currentUser.id && (
-                          <button onClick={() => changeInvoiceStatus(invoice.id, "completada")} className="btn btn-success btn-icon flex-fill">
-                            Completar
-                          </button>
-                        )}
-                      {currentUser.role === "admin" && (
-                        <button onClick={() => changeInvoiceStatus(invoice.id, "completada")} className="btn btn-success btn-icon flex-fill">
+
+                      {/* si el usuario logueado es el mensajero asignado o eres admin */}
+                      {(invoice.assignedCourier &&
+                        getId(invoice.assignedCourier) === currentUser.id) ||
+                        currentUser.role === "admin" ? (
+                        <button
+                          className="btn btn-success btn-icon flex-fill"
+                          onClick={() => changeInvoiceStatus(invoice.id, "completada")}
+                        >
                           Completar
                         </button>
-                      )}
-                      <button onClick={() => openCancelModal(invoice)} className="btn btn-danger btn-icon flex-fill">
+                      ) : null}
+
+                      {/* botón cancelar disponible para todos */}
+                      <button
+                        className="btn btn-danger btn-icon flex-fill"
+                        onClick={() => openCancelModal(invoice)}
+                      >
                         Cancelar
                       </button>
                     </>
                   )}
-                  {invoice.status === "cancelada" && (["admin", "manager", "warehouse"].includes(currentUser.role)) && (
-                    <button onClick={() => changeInvoiceStatus(invoice.id, "cancelada_entregado")} className="btn btn-warning btn-icon flex-fill">
-                      Marcar como entregado
-                    </button>
-                  )}
-                  {invoice.status === "completada" && (
-                    <>
-                      {invoice.assignedCourier && getId(invoice.assignedCourier) === currentUser.id ? (
-                        <button onClick={() => changeInvoiceStatus(invoice.id, "confirmada")} className="btn btn-success btn-icon flex-fill">
-                          Revertir Pagada
-                        </button>
-                      ) : (["admin", "manager"].includes(currentUser.role)) && (
-                        <button onClick={() => changeInvoiceStatus(invoice.id, "confirmada")} className="btn btn-success btn-icon flex-fill">
-                          Cambiar de Pagada
-                        </button>
-                      )}
-                    </>
-                  )}
+
                 </div>
               </div>
             ))
           )}
         </div>
 
+        {/* paginación */}
         {filteredDocs.length > pageSize && (
           <div className="pagination-controls d-flex justify-content-center align-items-center mb-3">
             <Button
               variant="secondary"
               className="me-2"
               disabled={currentPage <= 1}
-              onClick={() => setCurrentPage(currentPage - 1)}
+              onClick={() => setCurrentPage((p) => p - 1)}
             >
               Anterior
             </Button>
@@ -377,15 +441,15 @@ const Invoices = () => {
               variant="secondary"
               className="ms-2"
               disabled={currentPage >= totalPages}
-              onClick={() => setCurrentPage(currentPage + 1)}
+              onClick={() => setCurrentPage((p) => p + 1)}
             >
               Siguiente
             </Button>
           </div>
         )}
 
-        {/* Modales para asignar mensajero y cancelar factura */}
-        <Modal show={editingInvoice !== null} onHide={() => setEditingInvoice(null)}>
+        {/* modal asignar mensajero */}
+        <Modal show={!!editingInvoice} onHide={() => setEditingInvoice(null)}>
           <Modal.Header closeButton>
             <Modal.Title>Asignar Mensajero</Modal.Title>
           </Modal.Header>
@@ -393,31 +457,29 @@ const Invoices = () => {
             {editingInvoice && (
               <>
                 <p>
-                  Asignar mensajero para la factura #{editingInvoice.invoiceNumber} (Provincia: {editingInvoice.province})
+                  Factura #{editingInvoice.invoiceNumber} –{" "}
+                  {editingInvoice.province}
                 </p>
-                <Form.Group controlId="courierSearch">
-                  <Form.Label>Buscar por correo</Form.Label>
+                <Form.Group>
+                  <Form.Label>Buscar correo</Form.Label>
                   <Form.Control
-                    type="text"
-                    placeholder="Ingrese correo..."
                     value={courierSearch}
                     onChange={(e) => setCourierSearch(e.target.value)}
                   />
                 </Form.Group>
-                <Form.Group controlId="courierSelect" className="mt-3">
-                  <Form.Label>Seleccionar Mensajero</Form.Label>
-                  <Form.Control
-                    as="select"
+                <Form.Group className="mt-3">
+                  <Form.Label>Mensajero</Form.Label>
+                  <Form.Select
                     value={selectedCourier}
                     onChange={(e) => setSelectedCourier(e.target.value)}
                   >
-                    <option value="">Seleccione un mensajero</option>
-                    {filteredCouriers.map((courier) => (
-                      <option key={courier.id} value={courier.id}>
-                        {courier.name} ({courier.email})
+                    <option value="">Seleccione…</option>
+                    {filteredCouriers.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name} ({c.email})
                       </option>
                     ))}
-                  </Form.Control>
+                  </Form.Select>
                 </Form.Group>
               </>
             )}
@@ -432,7 +494,8 @@ const Invoices = () => {
           </Modal.Footer>
         </Modal>
 
-        <Modal show={cancelInvoice !== null} onHide={() => setCancelInvoice(null)}>
+        {/* modal cancelar */}
+        <Modal show={!!cancelInvoice} onHide={() => setCancelInvoice(null)}>
           <Modal.Header closeButton>
             <Modal.Title>Cancelar Factura</Modal.Title>
           </Modal.Header>
@@ -440,22 +503,20 @@ const Invoices = () => {
             {cancelInvoice && (
               <>
                 <p>
-                  Ingrese una nota para cancelar la factura #{cancelInvoice.invoiceNumber}
+                  Nota para cancelar #{cancelInvoice.invoiceNumber}
                 </p>
-                <Form.Group controlId="cancelNote">
-                  <Form.Label>Nota</Form.Label>
-                  <Form.Control
-                    as="textarea"
-                    value={cancelNote}
-                    onChange={(e) => setCancelNote(e.target.value)}
-                  />
-                </Form.Group>
+                <Form.Control
+                  as="textarea"
+                  rows={3}
+                  value={cancelNote}
+                  onChange={(e) => setCancelNote(e.target.value)}
+                />
               </>
             )}
           </Modal.Body>
           <Modal.Footer>
             <Button variant="secondary" onClick={() => setCancelInvoice(null)}>
-              Cancelar
+              Cerrar
             </Button>
             <Button variant="primary" onClick={saveCancellation}>
               Guardar

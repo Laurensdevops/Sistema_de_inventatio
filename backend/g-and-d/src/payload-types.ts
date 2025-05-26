@@ -75,7 +75,10 @@ export interface User {
   id: string;
   role: 'admin' | 'manager' | 'warehouse' | 'seller' | 'courier';
   province:
-    | 'Santo Domingo'
+    | 'Distrito Nacional'
+    | 'Santo Domingo Este'
+    | 'Santo Domingo Norte'
+    | 'Santo Domingo Oeste'
     | 'La Altagracia'
     | 'El Seibo'
     | 'Hato Mayor'

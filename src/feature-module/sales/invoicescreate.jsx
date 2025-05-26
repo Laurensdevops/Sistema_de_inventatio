@@ -1,18 +1,25 @@
+// src/components/InvoiceCreate/InvoiceCreate.jsx
+
 import React, { useState, useEffect, useMemo } from "react";
 import PropTypes from "prop-types";
-import {  useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Modal, Button } from "react-bootstrap";
 import { PlusCircle } from "feather-icons-react/build/IconComponents";
 import { all_routes } from "../../Router/all_routes";
 import ImageWithBasePath from "../../core/img/imagewithbasebath";
 import useProducts from "../../hooks/useProducts";
 import useCategories from "../../hooks/useCategories";
-
 import { getClientByPhone, getClientByEmail, createClient } from "../../services/clientService";
 import { createInvoice, updateInvoice } from "../../services/invoiceService";
+import { getAppliedPrice } from "../../utils/priceUtils";
 
 const regionsData = [
-  { name: "Santo Domingo", provinces: [], tariff: 100 },
+  { name: "Santo Domingo", provinces: [
+    { name: "Distrito Nacional", tariff: 120 },
+    { name: "Santo Domingo Norte", tariff: 110 },
+    { name: "Santo Domingo Este", tariff: 115 },
+    { name: "Santo Domingo Oeste", tariff: 105 }
+  ], tariff: 100 },
   {
     name: "Región Este",
     provinces: [
@@ -57,21 +64,16 @@ const regionsData = [
   }
 ];
 
-const getAppliedPrice = (prices, quantity) => {
-  if (!prices) return "Precio 1";
-  if (quantity >= 1 && quantity <= 5) return "Precio 1";
-  if (quantity >= 6 && quantity <= 11) return "Precio 2";
-  if (quantity >= 12) return "Precio 3";
-  return "Precio 1";
-};
-
 const InvoiceCreate = ({ initialInvoiceData = null }) => {
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Si se recibe información de productos desde ProductList, se toma para inicializar la factura
+  const invoiceFromProducts = location.state?.invoiceItems || [];
   const editingData = location.state?.initialInvoiceData || initialInvoiceData;
   const isEditing = editingData !== null;
 
-  const [invoiceItems, setInvoiceItems] = useState([]);
+  const [invoiceItems, setInvoiceItems] = useState(invoiceFromProducts);
   const [clientName, setClientName] = useState("");
   const [clientPhone, setClientPhone] = useState("");
   const [clientEmail, setClientEmail] = useState("");
@@ -82,7 +84,7 @@ const InvoiceCreate = ({ initialInvoiceData = null }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 3;
 
-  // Si la región no tiene provincias, usamos directamente su tarifa
+  // Manejo de región y tarifa
   const [selectedRegion, setSelectedRegion] = useState(regionsData[0]);
   const [selectedProvince, setSelectedProvince] = useState(
     regionsData[0].provinces.length > 0 ? regionsData[0].provinces[0] : null
@@ -131,7 +133,6 @@ const InvoiceCreate = ({ initialInvoiceData = null }) => {
             setSelectedProvince(provFound || regionFound.provinces[0]);
             setCustomTariff(provFound ? provFound.tariff : regionFound.provinces[0].tariff);
           } else {
-            // Si la región no tiene provincias, usamos su tarifa
             setSelectedProvince(null);
             setCustomTariff(regionFound.tariff);
           }
@@ -175,36 +176,7 @@ const InvoiceCreate = ({ initialInvoiceData = null }) => {
     currentPage * pageSize
   );
 
-  const addProductToInvoice = (product) => {
-    setInvoiceItems((prevItems) => {
-      const exists = prevItems.find((item) => item.productId === product.id);
-      if (exists) {
-        return prevItems.map((item) =>
-          item.productId === product.id
-            ? {
-                ...item,
-                quantity: item.quantity + 1,
-                appliedPrice: getAppliedPrice(item.prices, item.quantity + 1)
-              }
-            : item
-        );
-      }
-      return [
-        ...prevItems,
-        {
-          productId: product.id,
-          productName: product.name,
-          quantity: 1,
-          stock: product.stock,
-          image: product.image,
-          prices: product.prices,
-          appliedPrice: getAppliedPrice(product.prices, 1)
-        }
-      ];
-    });
-    setProductModalOpen(false);
-  };
-
+  // Funciones para manejar cambios en cantidades o eliminación de productos en la factura
   const handleQuantityChange = (productId, newQty) => {
     setInvoiceItems((prevItems) =>
       prevItems.map((item) =>
@@ -216,9 +188,7 @@ const InvoiceCreate = ({ initialInvoiceData = null }) => {
   };
 
   const handleRemoveItem = (productId) => {
-    setInvoiceItems((prevItems) =>
-      prevItems.filter((item) => item.productId !== productId)
-    );
+    setInvoiceItems((prevItems) => prevItems.filter((item) => item.productId !== productId));
   };
 
   useEffect(() => {
@@ -287,20 +257,8 @@ const InvoiceCreate = ({ initialInvoiceData = null }) => {
   const handleInvoiceSubmit = async (e) => {
     e.preventDefault();
 
-    if (!clientName) {
-      window.alert("Falta el nombre del cliente.");
-      return;
-    }
-    if (!clientPhone) {
-      window.alert("Falta el teléfono del cliente.");
-      return;
-    }
-    if (!clientEmail) {
-      window.alert("Falta el email del cliente.");
-      return;
-    }
-    if (!clientAddress) {
-      window.alert("Falta la dirección del cliente.");
+    if (!clientName || !clientPhone || !clientEmail || !clientAddress) {
+      window.alert("Complete los datos del cliente.");
       return;
     }
     if (invoiceItems.length === 0) {
@@ -350,6 +308,7 @@ const InvoiceCreate = ({ initialInvoiceData = null }) => {
       } else {
         await createInvoice(invoiceData);
       }
+      // Limpiar estados y redirigir a la lista de facturas
       setInvoiceItems([]);
       setClientName("");
       setClientPhone("");
@@ -378,7 +337,7 @@ const InvoiceCreate = ({ initialInvoiceData = null }) => {
           </div>
         </div>
 
-        {/* Sección de datos del cliente */}
+        {/* Información del cliente */}
         <div className="card mb-3">
           <div className="card-body">
             <h5>Información del Cliente</h5>
@@ -434,7 +393,7 @@ const InvoiceCreate = ({ initialInvoiceData = null }) => {
           </div>
         </div>
 
-        {/* Campos para Región, Provincia y Tarifa */}
+        {/* Ubicación */}
         <div className="card mb-3">
           <div className="card-body">
             <h5>Ubicación</h5>
@@ -499,7 +458,7 @@ const InvoiceCreate = ({ initialInvoiceData = null }) => {
           </div>
         </div>
 
-        {/* Formulario de la factura (Productos agregados) */}
+        {/* Formulario de la factura */}
         <form onSubmit={handleInvoiceSubmit}>
           <div className="card mb-3">
             <div className="card-body">
@@ -533,13 +492,13 @@ const InvoiceCreate = ({ initialInvoiceData = null }) => {
                         </td>
                         <td>{item.appliedPrice}</td>
                         <td>
-                          <button
-                            type="button"
-                            className="btn btn-danger btn-sm"
+                          <Button
+                            variant="danger"
+                            size="sm"
                             onClick={() => handleRemoveItem(item.productId)}
                           >
                             Eliminar
-                          </button>
+                          </Button>
                         </td>
                       </tr>
                     ))}
@@ -560,7 +519,7 @@ const InvoiceCreate = ({ initialInvoiceData = null }) => {
           </div>
         </form>
 
-        {/* Modal para seleccionar productos */}
+        {/* Modal para seleccionar productos (similar al de ProductList si se desea integrarlo aquí) */}
         <Modal
           show={productModalOpen}
           onHide={() => setProductModalOpen(false)}
@@ -622,14 +581,9 @@ const InvoiceCreate = ({ initialInvoiceData = null }) => {
                                 <ImageWithBasePath
                                   src={product.image || "assets/img/avatar/avatar-15.jpg"}
                                   alt="Producto"
-                                  className="rounded-circle"
                                 />
                               </div>
-                              <div>
-                                <div className="lh-1">
-                                  <span>{product.name}</span>
-                                </div>
-                              </div>
+                              <span>{product.name}</span>
                             </div>
                           </td>
                           <td>{product.stock}</td>
@@ -637,7 +591,9 @@ const InvoiceCreate = ({ initialInvoiceData = null }) => {
                             <Button
                               variant="primary"
                               size="sm"
-                              onClick={() => addProductToInvoice(product)}
+                              onClick={() => {
+                                // Puedes agregar lógica similar a ProductList si deseas usar este modal para agregar productos
+                              }}
                             >
                               Agregar
                             </Button>
@@ -673,7 +629,7 @@ const InvoiceCreate = ({ initialInvoiceData = null }) => {
           </Modal.Body>
         </Modal>
 
-        {/* Botón fijo para agregar productos */}
+        {/* Botón flotante para abrir modal de selección de productos (opcional) */}
         <div
           style={{
             position: "fixed",
@@ -697,6 +653,7 @@ const InvoiceCreate = ({ initialInvoiceData = null }) => {
             <PlusCircle />
           </Button>
         </div>
+
       </div>
     </div>
   );

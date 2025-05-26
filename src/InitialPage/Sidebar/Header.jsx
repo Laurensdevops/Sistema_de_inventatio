@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import FeatherIcon from "feather-icons-react";
 import ImageWithBasePath from "../../core/img/imagewithbasebath";
 import { Search, Settings, User, XCircle } from "react-feather";
@@ -9,6 +9,7 @@ import { logoutUser } from "../../core/redux/action";
 
 const Header = () => {
   const currentUser = JSON.parse(localStorage.getItem("user"));
+  const navigate = useNavigate();
 
   const roleText = {
     admin: "Administrador",
@@ -34,10 +35,12 @@ const Header = () => {
     localStorage.removeItem("token");
 
     // Despachar acción de logout en Redux
+    navigate("/signin");
+
     dispatch(logoutUser());
 
     // Redirigir al login
-    Navigate("/signin");
+
   };
 
   const isElementVisible = (element) => {

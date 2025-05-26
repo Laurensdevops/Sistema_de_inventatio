@@ -52,7 +52,7 @@ export const publicRoutes = [
     path: routes.productlist,
     name: "productsList",
     element: <ProductList />,
-    allowedRoles: ['admin'],
+    allowedRoles: ['admin', 'seller'],
     // allowedRoles: ['admin', 'manager', 'seller', 'courier'],
     route: Route,
   },
