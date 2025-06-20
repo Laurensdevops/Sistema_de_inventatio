@@ -1,12 +1,9 @@
 import { apiRequest } from "./apiClient";
+import buildProductQuery from "../utils/buildProductQuery";
 
-export const getProducts = async () => {
-  try {
-    return await apiRequest("products");
-  } catch (error) {
-    console.error("Error al obtener productos:", error);
-    throw error;
-  }
+export const getProducts = (filters = null) => {
+  const query = filters ? buildProductQuery(filters) : {};
+  return apiRequest("products", "GET", null, query);
 };
 
 export const getRecentProduct = async () => {

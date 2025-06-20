@@ -12,6 +12,7 @@ import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
 import { useSelector } from 'react-redux';
 import { deleteProduct } from '../../services/productService';
+import ProductFilters from "../../components/ProductFilters";
 
 import useProducts from '../../hooks/useProducts';
 import useCategories from '../../hooks/useCategories';
@@ -21,7 +22,17 @@ const ProductList = () => {
   const navigate = useNavigate();
   const user = useSelector((state) => state.user);
 
-  const { products } = useProducts();
+  const defaultFilters = {
+    categoryId: null,
+    colors: [],
+    sizes: [],
+    shoeSizes: [],
+    inStockOnly: false,
+  };
+
+  const [filters, setFilters] = useState(defaultFilters);
+
+  const { products } = useProducts(filters);
   const { categories } = useCategories();
 
   // ---------- carrito ---------- //
@@ -51,10 +62,10 @@ const ProductList = () => {
         return prev.map((i) =>
           i.productId === product.id
             ? {
-                ...i,
-                quantity: i.quantity + 1,
-                appliedPrice: getAppliedPrice(i.prices, i.quantity + 1),
-              }
+              ...i,
+              quantity: i.quantity + 1,
+              appliedPrice: getAppliedPrice(i.prices, i.quantity + 1),
+            }
             : i
         );
       }
@@ -150,6 +161,8 @@ const ProductList = () => {
             </Link>
           </div>
 
+          <ProductFilters filters={filters} onChange={setFilters} />
+
           {/* categorías y productos */}
           <div className="row align-items-start pos-wrapper">
             <div className="col-12">
@@ -158,7 +171,18 @@ const ProductList = () => {
                 <p>Seleccione una de las siguientes categorías</p>
                 <Slider {...sliderSettings} className="tabs owl-carousel pos-category">
                   {categories.map((cat) => (
-                    <div key={cat.id} className="pos-slick-item">
+                    <div
+                      key={cat.id}
+                      className={filters.categoryId === cat.id ? "pos-slick-item active" : "pos-slick-item"}
+                      onClick={() => setFilters(f => ({
+                        ...f,
+                        categoryId: cat.id,
+                        // coméntalo si NO quieres resetear color/talla al cambiar cat:
+                        colors: [],
+                        sizes: [],
+                        shoeSizes: []
+                      }))}
+                    >
                       <h6>{cat.name}</h6>
                       <span>{cat.productCount}</span>
                     </div>

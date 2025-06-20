@@ -1,29 +1,26 @@
-// src/hooks/useProducts.js
 import { useState, useEffect } from "react";
 import { getProducts } from "../services/productService";
 import useLoading from "./useLoading";
 
-const useProducts = (queryParams = {}) => {
+const useProducts = (filters = null) => {
   const { loading, startLoading, stopLoading } = useLoading(true);
-  const [data, setData] = useState(null); // data completa con paginación
+  const [data, setData] = useState(null);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchProductsData = async () => {
+    (async () => {
       startLoading();
       try {
-        const productsData = await getProducts(queryParams);
-        setData(productsData);
+        const productsData = await getProducts(filters);
+        setData(productsData);        // ← docs, pagination, etc.
       } catch (err) {
         console.error("Error al obtener productos:", err);
         setError(err);
       } finally {
         stopLoading();
       }
-    };
-
-    fetchProductsData();
-  }, [JSON.stringify(queryParams)]); // usar JSON.stringify para comparar objetos
+    })();
+  }, [JSON.stringify(filters)]);      // 🔄 se vuelve a disparar al cambiar filtros
 
   return { products: data, loading, error };
 };
