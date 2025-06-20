@@ -1,4 +1,5 @@
-const API_URL = "http://localhost:3000/api";
+const API_URL = "https://g-and-d.onrender.com/api";
+// const API_URL = "http://localhost:3000/api";
 
 const getToken = () => localStorage.getItem("token");
 
